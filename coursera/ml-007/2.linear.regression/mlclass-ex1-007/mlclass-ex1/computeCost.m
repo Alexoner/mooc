@@ -13,6 +13,13 @@ J = 0;
 % Instructions: Compute the cost of a particular choice of theta
 %               You should set J to the cost.
 
+%disp(X)
+%disp(y)
+a = theta
+%diff = ones(m,1) * (theta(1,1))
+p = X * theta
+difM = p - y
+J = 1/(2*m)*difM'*difM
 
 
 
