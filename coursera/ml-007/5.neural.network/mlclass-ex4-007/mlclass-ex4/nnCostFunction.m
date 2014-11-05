@@ -62,11 +62,26 @@ Theta2_grad = zeros(size(Theta2));
 %               and Theta2_grad from Part 2.
 %
 
+% Part 1:Feedforward,cost function J.
+X = [ones(m,1) X]
+z2 = X * Theta1'
+a2 = sigmoid(z2)
+a2 = [ones(size(a2,1),1) a2]
+z3 = a2 * Theta2'
+a3 = sigmoid(z3)
+h = a3
 
+yy = zeros(m,num_labels)
+for i=1:m
+    yy(i,y(i)) = 1
+end
+%Theta1
+%Theta2
+%y
+J = sum(sum( -1/m * (yy .* log(h) + (1-yy) .* log(1-h)), 2))
 
-
-
-
+penalty = lambda / (2*m) *(sum(sum(Theta1(:,2:end) .^ 2)) + sum(sum(Theta2(:,2:end) .^ 2)))
+J += penalty
 
 
 
