@@ -64,6 +64,7 @@ Theta2_grad = zeros(size(Theta2));
 
 % Part 1:Feedforward,cost function J.
 X = [ones(m,1) X]
+a1 = X
 z2 = X * Theta1'
 a2 = sigmoid(z2)
 a2 = [ones(size(a2,1),1) a2]
@@ -80,15 +81,28 @@ end
 %y
 J = sum(sum( -1/m * (yy .* log(h) + (1-yy) .* log(1-h)), 2))
 
+% regularized cost 
 penalty = lambda / (2*m) *(sum(sum(Theta1(:,2:end) .^ 2)) + sum(sum(Theta2(:,2:end) .^ 2)))
 J += penalty
 
+% Part 2:back forward.Back propagation algorithm to compute gradient
+%delta_3 = zeros(num_labels,1)
+%delta_2 = zeros(hidden_layer_size,1)
 
+for i=1:m,
+    delta_3 = (a3(i,:) - yy(i,:))'
+    delta_2 = (Theta2' * delta_3) .* [1;sigmoidGradient(z2(i,:))']
 
+    Theta1_grad = Theta1_grad + delta_2(2:end) * a1(i,:)
+    Theta2_grad = Theta2_grad + delta_3 * a2(i,:)
+end
 
+Theta1_grad = 1/m * Theta1_grad
+Theta2_grad = 1/m * Theta2_grad
 
-
-
+% regularized gradient
+Theta1_grad = Theta1_grad + lambda/m * [zeros(size(Theta1,1),1) Theta1(:,2:end)]
+Theta2_grad = Theta2_grad + lambda/m * [zeros(size(Theta2,1),1) Theta2(:,2:end)]
 
 
 
