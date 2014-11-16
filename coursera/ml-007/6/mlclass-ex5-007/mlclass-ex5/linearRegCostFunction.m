@@ -29,9 +29,9 @@ J = 1/(2*m) * diff' * diff
 J = J + lambda/(2*m)*theta(2:end)'*theta(2:end)
 
 
-
-
-
+% gradient:m*n,m*1==>n*1
+grad = 1/m * X'*diff + lambda/m * theta
+grad(1,:) = grad(1,:) - lambda/m * theta(1)
 
 
 
