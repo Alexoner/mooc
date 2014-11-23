@@ -16,7 +16,8 @@ sim = 0;
 %
 %
 
-
+x = x1 - x2
+sim = exp(-1/(2*sigma^2)*x'*x)
 
 
 
