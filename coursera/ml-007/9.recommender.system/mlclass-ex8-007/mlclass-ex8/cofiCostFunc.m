@@ -40,15 +40,20 @@ Theta_grad = zeros(size(Theta));
 %                     partial derivatives w.r.t. to each element of Theta
 %
 
+% cost function
+hyp = X * Theta';
+diff = (hyp - Y) .* R;
+J = 1/2 * sum(sum(diff .^ 2));
+
+% gradient
+X_grad = diff * Theta;
+Theta_grad = diff' * X;
 
 
-
-
-
-
-
-
-
+% regularized
+J += lambda/2 * sum(sum(X .^ 2)) + lambda/2 * sum(sum(Theta .^ 2));
+X_grad += lambda * X;
+Theta_grad += lambda * Theta;
 
 
 
