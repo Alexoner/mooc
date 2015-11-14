@@ -11,6 +11,7 @@ import numpy as np
 from sklearn.datasets import load_svmlight_file
 from sklearn import svm
 
+
 class Configuration(object):
     """
     Class for holding configuration which is the partial analysis of the input sentence.
@@ -34,7 +35,8 @@ class Configuration(object):
         """
         # dep_graph.nodes contain list of token for a sentence
         self.stack = [0]  # The root element
-        self.buffer = range(1, len(dep_graph.nodes))  # The rest is in the buffer
+        # The rest is in the buffer
+        self.buffer = range(1, len(dep_graph.nodes))
         self.arcs = []  # empty set of arc
         self._tokens = dep_graph.nodes
         self._max_address = len(self.buffer)
@@ -43,7 +45,8 @@ class Configuration(object):
 
     def __str__(self):
         return 'Stack : ' + \
-            str(self.stack) + '  Buffer : ' + str(self.buffer) + '   Arcs : ' + str(self.arcs)
+            str(self.stack) + '  Buffer : ' + \
+            str(self.buffer) + '   Arcs : ' + str(self.arcs)
 
     def extract_features(self):
         """
@@ -51,6 +54,7 @@ class Configuration(object):
         :return: list(str)
         """
         return self._user_feature_extractor(self._tokens, self.buffer, self.stack, self.arcs)
+
 
 class TransitionParser(object):
     """
@@ -140,11 +144,13 @@ class TransitionParser(object):
         """
         training_seq = []
 
-        projective_dependency_graphs = [dg for dg in depgraphs if TransitionParser._is_projective(dg)]
+        projective_dependency_graphs = [
+            dg for dg in depgraphs if TransitionParser._is_projective(dg)]
         countProj = len(projective_dependency_graphs)
 
         for depgraph in projective_dependency_graphs:
-            conf = Configuration(depgraph, self._user_feature_extractor.extract_features)
+            conf = Configuration(
+                depgraph, self._user_feature_extractor.extract_features)
 
             while conf.buffer:
                 b0 = conf.buffer[0]
@@ -225,11 +231,13 @@ class TransitionParser(object):
                 verbose=False,
                 probability=True)
 
-            print('Training support vector machine...')
+            print('Training support vector machine from input data file{}...'.format(
+                input_file.name))
             self._model.fit(x_train, y_train)
             print('done!')
         finally:
-            os.remove(input_file.name)
+            # os.remove(input_file.name)
+            pass
 
     def parse(self, depgraphs):
         """
@@ -242,7 +250,8 @@ class TransitionParser(object):
             raise ValueError('No model trained!')
 
         for depgraph in depgraphs:
-            conf = Configuration(depgraph, self._user_feature_extractor.extract_features)
+            conf = Configuration(
+                depgraph, self._user_feature_extractor.extract_features)
             while conf.buffer:
                 features = conf.extract_features()
                 col = []
@@ -257,7 +266,8 @@ class TransitionParser(object):
                 np_row = np.array(row)
                 np_data = np.array(data)
 
-                x_test = sparse.csr_matrix((np_data, (np_row, np_col)), shape=(1, len(self._dictionary)))
+                x_test = sparse.csr_matrix(
+                    (np_data, (np_row, np_col)), shape=(1, len(self._dictionary)))
 
                 pred_prob = self._model.predict_proba(x_test)[0]
 
@@ -287,7 +297,8 @@ class TransitionParser(object):
                             if self.transitions.shift(conf) != -1:
                                 break
                     else:
-                        raise ValueError("The predicted transition is not recognized, expected errors")
+                        raise ValueError(
+                            "The predicted transition is not recognized, expected errors")
 
             # Finish with operations build the dependency graph from Conf.arcs
 
