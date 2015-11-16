@@ -8,9 +8,9 @@ from providedcode.dependencygraph import DependencyGraph
 
 if __name__ == '__main__':
     # data = dataset.get_swedish_train_corpus().parsed_sents()
-    data = dataset.get_english_train_corpus().parsed_sents()
+    # data = dataset.get_english_train_corpus().parsed_sents()
     # data = dataset.get_dutch_train_corpus().parsed_sents()
-    # data = dataset.get_danish_train_corpus().parsed_sents()
+    data = dataset.get_danish_train_corpus().parsed_sents()
     random.seed(1234)
     subdata = random.sample(data, 200)
 
@@ -18,12 +18,14 @@ if __name__ == '__main__':
         tp = TransitionParser(Transition, FeatureExtractor)
         tp.train(subdata)
         # tp.save('swedish.model')
-        tp.save('english.model')
+        # tp.save('english.model')
+        tp.save('danish.model')
 
         # testdata = dataset.get_swedish_test_corpus().parsed_sents()
+        testdata = dataset.get_danish_test_corpus().parsed_sents()
         # tp = TransitionParser.load('badfeatures.model')
-        testdata = dataset.get_english_test_corpus().parsed_sents()
-        tp = TransitionParser.load('english.model')
+        # testdata = dataset.get_english_test_corpus().parsed_sents()
+        # tp = TransitionParser.load('english.model')
 
         parsed = tp.parse(testdata)
 
