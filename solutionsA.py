@@ -12,9 +12,23 @@ MINUS_INFINITY_SENTENCE_LOG_PROB = -1000
 # training_corpus: is a list of the sentences. Each sentence is a string with tokens separated by spaces, ending in a newline character.
 # This function outputs three python dictionaries, where the keys are tuples expressing the ngram and the value is the log probability of that ngram
 def calc_probabilities(training_corpus):
-    unigram_p = {}
-    bigram_p = {}
-    trigram_p = {}
+    unigram_tuples = []
+    bigram_tuples = []
+    trigram_tuples = []
+    for i in xrange(0,len(training_corpus)):
+        training_corpus[i] = START_SYMBOL + ' ' + training_corpus[i]
+        training_corpus[i].replace('.',' ' + STOP_SYMBOL)
+        tokens         = nltk.word_tokenize(training_corpus[i])
+        unigram_tuples += list(tokens)
+        bigram_tuples  += list(nltk.bigrams(tokens))
+        trigram_tuples += list(nltk.trigrams(tokens))
+    unigram_count  = { item: unigram_tuples.count(item) for item in unigram_tuples }
+    bigram_count   = { item: bigram_tuples.count(item) for item in bigram_tuples }
+    trigram_count  = { item: trigram_tuples.count(item) for item in trigram_tuples }
+    unigram_p      = { item: math.log(unigram_count[item],2) - math.log(len(unigram_tuples),2) for item in set(unigram_tuples) }
+    bigram_p       = { item: math.log(bigram_count[item],2)- math.log(len(bigram_tuples),2) for item in set(bigram_tuples) }
+    trigram_p      = { item: math.log(trigram_count[item],2)- math.lo(len(trigram_tuples),2) for item in set(trigram_tuples) }
+    print "calc_probabilities finished!"
     return unigram_p, bigram_p, trigram_p
 
 # Prints the output for q1
@@ -34,7 +48,7 @@ def q1_output(unigrams, bigrams, trigrams, filename):
         outfile.write('BIGRAM ' + bigram[0] + ' ' + bigram[1]  + ' ' + str(bigrams[bigram]) + '\n')
 
     trigrams_keys = trigrams.keys()
-    trigrams_keys.sort()    
+    trigrams_keys.sort()
     for trigram in trigrams_keys:
         outfile.write('TRIGRAM ' + trigram[0] + ' ' + trigram[1] + ' ' + trigram[2] + ' ' + str(trigrams[trigram]) + '\n')
 
@@ -46,9 +60,12 @@ def q1_output(unigrams, bigrams, trigrams, filename):
 # ngram_p: python dictionary of probabilities of uni-, bi- and trigrams.
 # n: size of the ngram you want to use to compute probabilities
 # corpus: list of sentences to score. Each sentence is a string with tokens separated by spaces, ending in a newline character.
-# This function must return a python list of scores, where the first element is the score of the first sentence, etc. 
+# This function must return a python list of scores, where the first element is the score of the first sentence, etc.
 def score(ngram_p, n, corpus):
     scores = []
+    for sentence in corpus:
+
+        scores.append(score)
     return scores
 
 # Outputs a score to a file
@@ -109,7 +126,7 @@ def main():
     infile.close()
     infile = open(DATA_PATH + 'Sample2.txt', 'r')
     sample2 = infile.readlines()
-    infile.close() 
+    infile.close()
 
     # score the samples
     sample1scores = linearscore(unigrams, bigrams, trigrams, sample1)
