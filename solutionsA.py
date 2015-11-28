@@ -1,6 +1,7 @@
 import math
 import nltk
 import time
+import sys
 
 # Constants to be used by you when you fill the functions
 START_SYMBOL = '*'
@@ -10,60 +11,102 @@ MINUS_INFINITY_SENTENCE_LOG_PROB = -1000
 # TODO: IMPLEMENT THIS FUNCTION
 # Calculates unigram, bigram, and trigram probabilities given a training corpus
 # training_corpus: is a list of the sentences. Each sentence is a string with tokens separated by spaces, ending in a newline character.
-# This function outputs three python dictionaries, where the keys are tuples expressing the ngram and the value is the log probability of that ngram
+# This function outputs three python dictionaries, where the keys are
+# tuples expressing the ngram and the value is the log probability of that
+# ngram
+
+
 def calc_probabilities(training_corpus):
-    unigram_tuples = []
-    bigram_tuples  = []
-    trigram_tuples = []
+    """
+        this is docstring
+    """
+    # unigram_tuples = []
+    # bigram_tuples = []
+    # trigram_tuples = []
 
     unigram_count = {}
-    bigram_count  = {}
+    bigram_count = {}
     trigram_count = {}
+
+    unigram_total = 0
+    bigram_total = 0
+    trigram_total = 0
     print 'total {} sentences'.format(len(training_corpus))
-    for i in xrange(0,len(training_corpus)):
-        print 'processing ',i,'th sentence...'
+    for i in xrange(0, len(training_corpus)):
+        if i % 1000 == 0:
+            print 'processing ', i, 'th sentence...'
         training_corpus[i] = START_SYMBOL + ' ' + training_corpus[i]
         training_corpus[i] = training_corpus[i] + ' ' + STOP_SYMBOL
         # training_corpus[i].replace('.',' ' + STOP_SYMBOL)
-        tokens         = nltk.word_tokenize(training_corpus[i])
-        unigram_tuples += list(tokens)
-        bigram_tuples  += list(nltk.bigrams(tokens))
-        trigram_tuples += list(nltk.trigrams(tokens))
-        for item in unigram_tuples:
-            unigram_count.setdefault(item,0)
+        tokens = nltk.word_tokenize(training_corpus[i])
+        unigram_tuples_i = list((token,) for token in tokens)
+        bigram_tuples_i = list(nltk.bigrams(tokens))
+        trigram_tuples_i = list(nltk.trigrams(tokens))
+        unigram_total += len(unigram_tuples_i)
+        bigram_total += len(bigram_tuples_i)
+        trigram_total += len(trigram_tuples_i)
+        for item in unigram_tuples_i:
+            unigram_count.setdefault(item, 0)
             unigram_count[item] = unigram_count[item] + 1
-        for item in bigram_tuples:
-            bigram_count.setdefault(item,0)
+        for item in bigram_tuples_i:
+            bigram_count.setdefault(item, 0)
             bigram_count[item] = bigram_count[item] + 1
-        for item in trigram_tuples:
-            trigram_count.setdefault(item,0)
+        for item in trigram_tuples_i:
+            trigram_count.setdefault(item, 0)
             trigram_count[item] = trigram_count[item] + 1
-    unigram_p      = { item: math.log(unigram_count[item],2) - math.log(len(unigram_tuples),2) for item in set(unigram_tuples) }
-    bigram_p       = { item: math.log(bigram_count[item],2)- math.log(len(bigram_tuples),2) for item in set(bigram_tuples) }
-    trigram_p      = { item: math.log(trigram_count[item],2)- math.lo(len(trigram_tuples),2) for item in set(trigram_tuples) }
+    unigram_p = {
+        item: math.log(unigram_count[item], 2) - math.log(unigram_total, 2)
+        for item in set(unigram_count)}
+    bigram_p = {
+        item: math.log(bigram_count[item], 2) - math.log(bigram_total, 2)
+        for item in set(bigram_count)}
+    trigram_p = {
+        item: math.log(trigram_count[item], 2) - math.log(trigram_total, 2)
+        for item in set(trigram_count)}
     print "calc_probabilities finished!"
     return unigram_p, bigram_p, trigram_p
 
 # Prints the output for q1
-# Each input is a python dictionary where keys are a tuple expressing the ngram, and the value is the log probability of that ngram
+# Each input is a python dictionary where keys are a tuple expressing the
+# ngram, and the value is the log probability of that ngram
+
+
 def q1_output(unigrams, bigrams, trigrams, filename):
     # output probabilities
     outfile = open(filename, 'w')
 
-    unigrams_keys = unigrams.keys()
-    unigrams_keys.sort()
+    unigrams_keys = sorted(unigrams.keys())
     for unigram in unigrams_keys:
-        outfile.write('UNIGRAM ' + unigram[0] + ' ' + str(unigrams[unigram]) + '\n')
+        print 'UNIGRAM ' + unigram[0] + ' ' + str(unigrams[unigram]) + '\n'
+        outfile.write('UNIGRAM ' +
+                      unigram[0] +
+                      ' ' +
+                      str(unigrams[unigram]) +
+                      '\n')
 
-    bigrams_keys = bigrams.keys()
-    bigrams_keys.sort()
+    bigrams_keys = sorted(bigrams.keys())
     for bigram in bigrams_keys:
-        outfile.write('BIGRAM ' + bigram[0] + ' ' + bigram[1]  + ' ' + str(bigrams[bigram]) + '\n')
+        outfile.write('BIGRAM ' +
+                      bigram[0] +
+                      ' ' +
+                      bigram[1] +
+                      ' ' +
+                      str(bigrams[bigram]) +
+                      '\n')
+        outfile.flush()
 
-    trigrams_keys = trigrams.keys()
-    trigrams_keys.sort()
+    trigrams_keys = sorted(trigrams.keys())
     for trigram in trigrams_keys:
-        outfile.write('TRIGRAM ' + trigram[0] + ' ' + trigram[1] + ' ' + trigram[2] + ' ' + str(trigrams[trigram]) + '\n')
+        outfile.write('TRIGRAM ' +
+                      trigram[0] +
+                      ' ' +
+                      trigram[1] +
+                      ' ' +
+                      trigram[2] +
+                      ' ' +
+                      str(trigrams[trigram]) +
+                      '\n')
+        outfile.flush()
 
     outfile.close()
 
@@ -73,17 +116,31 @@ def q1_output(unigrams, bigrams, trigrams, filename):
 # ngram_p: python dictionary of probabilities of uni-, bi- and trigrams.
 # n: size of the ngram you want to use to compute probabilities
 # corpus: list of sentences to score. Each sentence is a string with tokens separated by spaces, ending in a newline character.
-# This function must return a python list of scores, where the first element is the score of the first sentence, etc.
+# This function must return a python list of scores, where the first
+# element is the score of the first sentence, etc.
 def score(ngram_p, n, corpus):
     scores = []
     for sentence in corpus:
-
+        tokens = nltk.word_tokenize(sentence)
+        if n == 1:
+            ngrams = list(tokens)
+            try:
+                score = sum([ngram_p[gram] for gram in ngrams])
+            except:
+                score = MINUS_INFINITY_SENTENCE_LOG_PROB
+        elif n == 2:
+            ngrams = list(nltk.bigrams(tokens))
+        elif n == 3:
+            ngrams = list(nltk.trigrams(tokens))
+            score = MINUS_INFINITY_SENTENCE_LOG_PROB
         scores.append(score)
     return scores
 
 # Outputs a score to a file
 # scores: list of scores
 # filename: is the output file name
+
+
 def score_output(scores, filename):
     outfile = open(filename, 'w')
     for score in scores:
@@ -94,6 +151,8 @@ def score_output(scores, filename):
 # Calculates scores (log probabilities) for every sentence with a linearly interpolated model
 # Each ngram argument is a python dictionary where the keys are tuples that express an ngram and the value is the log probability of that ngram
 # Like score(), this function returns a python list of scores
+
+
 def linearscore(unigrams, bigrams, trigrams, corpus):
     scores = []
     return scores
@@ -102,6 +161,8 @@ DATA_PATH = 'data/'
 OUTPUT_PATH = 'output/'
 
 # DO NOT MODIFY THE MAIN FUNCTION
+
+
 def main():
     # start timer
     time.clock()
@@ -116,6 +177,7 @@ def main():
 
     # question 1 output
     q1_output(unigrams, bigrams, trigrams, OUTPUT_PATH + 'A1.txt')
+    sys.exit(0)
 
     # score sentences (question 2)
     uniscores = score(unigrams, 1, corpus)
@@ -150,6 +212,7 @@ def main():
     score_output(sample2scores, OUTPUT_PATH + 'Sample2_scored.txt')
 
     # print total time to run Part A
-    print "Part A time: " + str(time.clock()) + ' sec'
+    print("Part A time: " + str(time.clock()) + ' sec')
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
