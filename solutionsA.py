@@ -13,18 +13,31 @@ MINUS_INFINITY_SENTENCE_LOG_PROB = -1000
 # This function outputs three python dictionaries, where the keys are tuples expressing the ngram and the value is the log probability of that ngram
 def calc_probabilities(training_corpus):
     unigram_tuples = []
-    bigram_tuples = []
+    bigram_tuples  = []
     trigram_tuples = []
+
+    unigram_count = {}
+    bigram_count  = {}
+    trigram_count = {}
+    print 'total {} sentences'.format(len(training_corpus))
     for i in xrange(0,len(training_corpus)):
+        print 'processing ',i,'th sentence...'
         training_corpus[i] = START_SYMBOL + ' ' + training_corpus[i]
-        training_corpus[i].replace('.',' ' + STOP_SYMBOL)
+        training_corpus[i] = training_corpus[i] + ' ' + STOP_SYMBOL
+        # training_corpus[i].replace('.',' ' + STOP_SYMBOL)
         tokens         = nltk.word_tokenize(training_corpus[i])
         unigram_tuples += list(tokens)
         bigram_tuples  += list(nltk.bigrams(tokens))
         trigram_tuples += list(nltk.trigrams(tokens))
-    unigram_count  = { item: unigram_tuples.count(item) for item in unigram_tuples }
-    bigram_count   = { item: bigram_tuples.count(item) for item in bigram_tuples }
-    trigram_count  = { item: trigram_tuples.count(item) for item in trigram_tuples }
+        for item in unigram_tuples:
+            unigram_count.setdefault(item,0)
+            unigram_count[item] = unigram_count[item] + 1
+        for item in bigram_tuples:
+            bigram_count.setdefault(item,0)
+            bigram_count[item] = bigram_count[item] + 1
+        for item in trigram_tuples:
+            trigram_count.setdefault(item,0)
+            trigram_count[item] = trigram_count[item] + 1
     unigram_p      = { item: math.log(unigram_count[item],2) - math.log(len(unigram_tuples),2) for item in set(unigram_tuples) }
     bigram_p       = { item: math.log(bigram_count[item],2)- math.log(len(bigram_tuples),2) for item in set(bigram_tuples) }
     trigram_p      = { item: math.log(trigram_count[item],2)- math.lo(len(trigram_tuples),2) for item in set(trigram_tuples) }
