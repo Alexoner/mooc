@@ -50,29 +50,33 @@ def calc_probabilities(training_corpus):
         bigram_total += len(bigram_tuples_i)
         trigram_total += len(trigram_tuples_i)
         for item in unigram_tuples_i:
+            if item in [(START_SYMBOL,)]:
+                continue
             unigram_count.setdefault(item, 0)
             unigram_count_pnodes.setdefault(item[0:-1], 0)
             unigram_count[item] = unigram_count[item] + 1
-            unigram_count[item] = unigram_count_pnodes[item[0:-1]] + 1
+            unigram_count_pnodes[item[0:-1]] = unigram_count_pnodes[item[0:-1]] + 1
         for item in bigram_tuples_i:
             bigram_count.setdefault(item, 0)
             bigram_count_pnodes.setdefault(item[0:-1], 0)
             bigram_count[item] = bigram_count[item] + 1
-            bigram_count_pnodes[item[0:-1]] = bigram_count_pnodes[item[0:-1]]+1
+            bigram_count_pnodes[
+                item[0:-1]] = bigram_count_pnodes[item[0:-1]] + 1
         for item in trigram_tuples_i:
             trigram_count.setdefault(item, 0)
             trigram_count_pnodes.setdefault(item[0:-1], 0)
             trigram_count[item] = trigram_count[item] + 1
-            trigram_count_pnodes[item[0:-1]] = trigram_count_pnodes[item[0:-1]]+1
+            trigram_count_pnodes[
+                item[0:-1]] = trigram_count_pnodes[item[0:-1]] + 1
     unigram_p = {
-        item: math.log(unigram_count[item], 2) - math.log(unigram_total, 2)
+        item: math.log(unigram_count[item], 2) - math.log(unigram_count_pnodes[item[0:-1]], 2)
         for item in set(unigram_count)}
     bigram_p = {
-        item: math.log(bigram_count[item], 2) - math.log(bigram_count_pnodes[item[0:-1]], 2)
-        for item in set(bigram_count)}
+        item: math.log(bigram_count[item], 2) -
+              math.log(bigram_count_pnodes[item[0:- 1]], 2) for item in set(bigram_count)}
     trigram_p = {
-        item: math.log(trigram_count[item], 2) - math.log(trigram_count_pnodes[item[0:-1]], 2)
-        for item in set(trigram_count)}
+        item: math.log(trigram_count[item], 2) -
+              math.log(trigram_count_pnodes[item[0:- 1]], 2) for item in set(trigram_count)}
     print "calc_probabilities finished!"
     return unigram_p, bigram_p, trigram_p
 
@@ -131,35 +135,25 @@ def q1_output(unigrams, bigrams, trigrams, filename):
 def score(ngram_p, n, corpus):
     print "scoring corpus for ", n, "-grams"
     scores = []
-    conditional_probabilities = {}
-    ngram_p_keys = ngram_p.keys()
     for i, sentence in enumerate(corpus):
+        ngram_tuples = None
         score_i = 0
-        if i % 100 == 0:
+        if i % 10000 == 0:
             print 'scoring ', i, 'th sentence...'
         tokens = sentence.split()
         if n == 1:
             ngram_tuples = list([(token,) for token in tokens])
-            try:
-                score_i = sum([ngram_p[gram] for gram in ngram_tuples])
-            except KeyError as error:
-                score_i = MINUS_INFINITY_SENTENCE_LOG_PROB
-                print 'ngram_tuple ', gram, ' not in dict ', error.message
-        elif n == 2 or n == 3:
-            ngram_tuples = None
-            if n == 2:
-                ngram_tuples = list(nltk.bigrams(tokens))
-            if n == 3:
-                ngram_tuples = list(nltk.trigrams(tokens))
-            try:
-                for gram in ngram_tuples:
-                    conditional_probabilities[gram] = ngram_p[gram] - math.log(
-                        sum([math.pow(2, ngram_p[tokens])
-                             for tokens in ngram_p_keys if gram[0:-1] == tokens[0:-1]]), 2)
-                    score_i += conditional_probabilities[gram]
-            except KeyError as error:
-                score_i = MINUS_INFINITY_SENTENCE_LOG_PROB
-                print 'ngram_tuple not in dict ', error.message
+        elif n == 2:
+            ngram_tuples = list(nltk.bigrams(tokens))
+        elif n == 3:
+            ngram_tuples = list(nltk.trigrams(tokens))
+
+        try:
+            score_i = sum([ngram_p[gram] for gram in ngram_tuples
+                           if gram not in [(START_SYMBOL,), (STOP_SYMBOL,)]])
+        except KeyError as error:
+            score_i = MINUS_INFINITY_SENTENCE_LOG_PROB
+            print 'ngram_tuple ', gram, ' not in dict ', error.message
         scores.append(score_i)
     return scores
 
