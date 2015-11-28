@@ -38,7 +38,7 @@ def calc_probabilities(training_corpus):
         training_corpus[i] = START_SYMBOL + ' ' + training_corpus[i]
         training_corpus[i] = training_corpus[i] + ' ' + STOP_SYMBOL
         # training_corpus[i].replace('.',' ' + STOP_SYMBOL)
-        tokens = nltk.word_tokenize(training_corpus[i])
+        tokens = training_corpus[i].split()
         unigram_tuples_i = list((token,) for token in tokens)
         bigram_tuples_i = list(nltk.bigrams(tokens))
         trigram_tuples_i = list(nltk.trigrams(tokens))
@@ -77,12 +77,12 @@ def q1_output(unigrams, bigrams, trigrams, filename):
 
     unigrams_keys = sorted(unigrams.keys())
     for unigram in unigrams_keys:
-        print 'UNIGRAM ' + unigram[0] + ' ' + str(unigrams[unigram]) + '\n'
         outfile.write('UNIGRAM ' +
                       unigram[0] +
                       ' ' +
                       str(unigrams[unigram]) +
                       '\n')
+        outfile.flush()
 
     bigrams_keys = sorted(bigrams.keys())
     for bigram in bigrams_keys:
@@ -121,7 +121,7 @@ def q1_output(unigrams, bigrams, trigrams, filename):
 def score(ngram_p, n, corpus):
     scores = []
     for sentence in corpus:
-        tokens = nltk.word_tokenize(sentence)
+        tokens = sentence.split()
         if n == 1:
             ngrams = list(tokens)
             try:
