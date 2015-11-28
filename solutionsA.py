@@ -28,12 +28,16 @@ def calc_probabilities(training_corpus):
     bigram_count = {}
     trigram_count = {}
 
+    unigram_count_pnodes = {}
+    bigram_count_pnodes = {}
+    trigram_count_pnodes = {}
+
     unigram_total = 0
     bigram_total = 0
     trigram_total = 0
     print 'total {} sentences'.format(len(training_corpus))
     for i in xrange(0, len(training_corpus)):
-        if i % 1000 == 0:
+        if i % 3000 == 0:
             print 'processing ', i, 'th sentence...'
         training_corpus[i] = START_SYMBOL + ' ' + training_corpus[i]
         training_corpus[i] = training_corpus[i] + ' ' + STOP_SYMBOL
@@ -47,21 +51,27 @@ def calc_probabilities(training_corpus):
         trigram_total += len(trigram_tuples_i)
         for item in unigram_tuples_i:
             unigram_count.setdefault(item, 0)
+            unigram_count_pnodes.setdefault(item[0:-1], 0)
             unigram_count[item] = unigram_count[item] + 1
+            unigram_count[item] = unigram_count_pnodes[item[0:-1]] + 1
         for item in bigram_tuples_i:
             bigram_count.setdefault(item, 0)
+            bigram_count_pnodes.setdefault(item[0:-1], 0)
             bigram_count[item] = bigram_count[item] + 1
+            bigram_count_pnodes[item[0:-1]] = bigram_count_pnodes[item[0:-1]]+1
         for item in trigram_tuples_i:
             trigram_count.setdefault(item, 0)
+            trigram_count_pnodes.setdefault(item[0:-1], 0)
             trigram_count[item] = trigram_count[item] + 1
+            trigram_count_pnodes[item[0:-1]] = trigram_count_pnodes[item[0:-1]]+1
     unigram_p = {
         item: math.log(unigram_count[item], 2) - math.log(unigram_total, 2)
         for item in set(unigram_count)}
     bigram_p = {
-        item: math.log(bigram_count[item], 2) - math.log(bigram_total, 2)
+        item: math.log(bigram_count[item], 2) - math.log(bigram_count_pnodes[item[0:-1]], 2)
         for item in set(bigram_count)}
     trigram_p = {
-        item: math.log(trigram_count[item], 2) - math.log(trigram_total, 2)
+        item: math.log(trigram_count[item], 2) - math.log(trigram_count_pnodes[item[0:-1]], 2)
         for item in set(trigram_count)}
     print "calc_probabilities finished!"
     return unigram_p, bigram_p, trigram_p
@@ -119,21 +129,38 @@ def q1_output(unigrams, bigrams, trigrams, filename):
 # This function must return a python list of scores, where the first
 # element is the score of the first sentence, etc.
 def score(ngram_p, n, corpus):
+    print "scoring corpus for ", n, "-grams"
     scores = []
-    for sentence in corpus:
+    conditional_probabilities = {}
+    ngram_p_keys = ngram_p.keys()
+    for i, sentence in enumerate(corpus):
+        score_i = 0
+        if i % 100 == 0:
+            print 'scoring ', i, 'th sentence...'
         tokens = sentence.split()
         if n == 1:
-            ngrams = list(tokens)
+            ngram_tuples = list([(token,) for token in tokens])
             try:
-                score = sum([ngram_p[gram] for gram in ngrams])
-            except:
-                score = MINUS_INFINITY_SENTENCE_LOG_PROB
-        elif n == 2:
-            ngrams = list(nltk.bigrams(tokens))
-        elif n == 3:
-            ngrams = list(nltk.trigrams(tokens))
-            score = MINUS_INFINITY_SENTENCE_LOG_PROB
-        scores.append(score)
+                score_i = sum([ngram_p[gram] for gram in ngram_tuples])
+            except KeyError as error:
+                score_i = MINUS_INFINITY_SENTENCE_LOG_PROB
+                print 'ngram_tuple ', gram, ' not in dict ', error.message
+        elif n == 2 or n == 3:
+            ngram_tuples = None
+            if n == 2:
+                ngram_tuples = list(nltk.bigrams(tokens))
+            if n == 3:
+                ngram_tuples = list(nltk.trigrams(tokens))
+            try:
+                for gram in ngram_tuples:
+                    conditional_probabilities[gram] = ngram_p[gram] - math.log(
+                        sum([math.pow(2, ngram_p[tokens])
+                             for tokens in ngram_p_keys if gram[0:-1] == tokens[0:-1]]), 2)
+                    score_i += conditional_probabilities[gram]
+            except KeyError as error:
+                score_i = MINUS_INFINITY_SENTENCE_LOG_PROB
+                print 'ngram_tuple not in dict ', error.message
+        scores.append(score_i)
     return scores
 
 # Outputs a score to a file
@@ -177,7 +204,6 @@ def main():
 
     # question 1 output
     q1_output(unigrams, bigrams, trigrams, OUTPUT_PATH + 'A1.txt')
-    sys.exit(0)
 
     # score sentences (question 2)
     uniscores = score(unigrams, 1, corpus)
@@ -188,6 +214,7 @@ def main():
     score_output(uniscores, OUTPUT_PATH + 'A2.uni.txt')
     score_output(biscores, OUTPUT_PATH + 'A2.bi.txt')
     score_output(triscores, OUTPUT_PATH + 'A2.tri.txt')
+    sys.exit(0)
 
     # linear interpolation (question 3)
     linearscores = linearscore(unigrams, bigrams, trigrams, corpus)
