@@ -150,7 +150,7 @@ def score(ngram_p, n, corpus):
 
         try:
             score_i = sum([ngram_p[gram] for gram in ngram_tuples
-                           if gram not in [(START_SYMBOL,), (STOP_SYMBOL,)]])
+                           if gram not in [(START_SYMBOL,)]])
         except KeyError as error:
             score_i = MINUS_INFINITY_SENTENCE_LOG_PROB
             print 'ngram_tuple ', gram, ' not in dict ', error.message
