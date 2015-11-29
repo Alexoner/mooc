@@ -113,6 +113,19 @@ def q3_output(rare, filename):
 def calc_emission(brown_words_rare, brown_tags):
     e_values = {}
     taglist = set([])
+    tags_words_count = {}
+    tags_count = {}
+    for i, words_rare in enumerate(brown_words_rare):
+        for j, word in enumerate(words_rare):
+            tags_words_count.setdefault((word, brown_tags[i][j]), 0)
+            tags_words_count[(word, brown_tags[i][j])] = tags_words_count[(word, brown_tags[i][j])] + 1
+            tags_count.setdefault(brown_tags[i][j], 0)
+            tags_count[brown_tags[i][j]] = tags_count[brown_tags[i][j]] + 1
+            taglist.add(brown_tags[i][j])
+
+    e_values = {(word, tag) : math.log(cnt, 2) -
+                              math.log(tags_count[tag], 2)
+                for (word, tag), cnt in tags_words_count.items()}
     return e_values, taglist
 
 # This function takes the output from calc_emissions() and outputs it
@@ -199,7 +212,6 @@ def main():
 
     # question 3 output
     q3_output(brown_words_rare, OUTPUT_PATH + "B3.txt")
-    sys.exit(0)
 
     # calculate emission probabilities (question 4)
     e_values, taglist = calc_emission(brown_words_rare, brown_tags)
@@ -210,6 +222,7 @@ def main():
     # delete unneceessary data
     del brown_train
     del brown_words_rare
+    sys.exit(0)
 
     # open Brown development data (question 5)
     infile = open(DATA_PATH + "Brown_dev.txt", "r")
