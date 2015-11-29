@@ -27,7 +27,6 @@ def split_wordtags(brown_train):
                                  START_SYMBOL+'/'+START_SYMBOL,
                                  sentence_tagged,
                                  STOP_SYMBOL+'/'+STOP_SYMBOL,
-                                 STOP_SYMBOL+'/'+STOP_SYMBOL,
                                 ]).split()
         re_pattern = re.compile(r'(.*)/([^0-9]+)')
         for word_tagged in words_tagged:
@@ -76,6 +75,13 @@ def q2_output(q_values, filename):
 # Note: words that appear exactly 5 times should be considered rare!
 def calc_known(brown_words):
     known_words = set([])
+    word_dict = {}
+    for words in brown_words:
+        for word in words:
+            word_dict.setdefault(word, 0)
+            word_dict[word] = word_dict[word] + 1
+            if word_dict[word] > RARE_WORD_MAX_FREQ:
+                known_words.add(word)
     return known_words
 
 # TODO: IMPLEMENT THIS FUNCTION
@@ -83,6 +89,12 @@ def calc_known(brown_words):
 # Returns the equivalent to brown_words but replacing the unknown words by '_RARE_' (use RARE_SYMBOL constant)
 def replace_rare(brown_words, known_words):
     brown_words_rare = []
+    for words in brown_words:
+        for i, word in enumerate(words):
+            if word not in known_words:
+                words[i] = RARE_SYMBOL
+
+        brown_words_rare.append(words)
     return brown_words_rare
 
 # This function takes the ouput from replace_rare and outputs it to a file
@@ -178,7 +190,6 @@ def main():
 
     # question 2 output
     q2_output(q_values, OUTPUT_PATH + 'B2.txt')
-    sys.exit(0)
 
     # calculate list of words with count > 5 (question 3)
     known_words = calc_known(brown_words)
@@ -188,6 +199,7 @@ def main():
 
     # question 3 output
     q3_output(brown_words_rare, OUTPUT_PATH + "B3.txt")
+    sys.exit(0)
 
     # calculate emission probabilities (question 4)
     e_values, taglist = calc_emission(brown_words_rare, brown_tags)
