@@ -8,6 +8,8 @@ START_SYMBOL = '*'
 STOP_SYMBOL = 'STOP'
 MINUS_INFINITY_SENTENCE_LOG_PROB = -1000
 
+log2 = lambda x: math.log(x, 2)
+
 # TODO: IMPLEMENT THIS FUNCTION
 # Calculates unigram, bigram, and trigram probabilities given a training corpus
 # training_corpus: is a list of the sentences. Each sentence is a string with tokens separated by spaces, ending in a newline character.
@@ -55,7 +57,8 @@ def calc_probabilities(training_corpus):
             unigram_count.setdefault(item, 0)
             unigram_count_pnodes.setdefault(item[0:-1], 0)
             unigram_count[item] = unigram_count[item] + 1
-            unigram_count_pnodes[item[0:-1]] = unigram_count_pnodes[item[0:-1]] + 1
+            unigram_count_pnodes[
+                item[0:-1]] = unigram_count_pnodes[item[0:-1]] + 1
         for item in bigram_tuples_i:
             bigram_count.setdefault(item, 0)
             bigram_count_pnodes.setdefault(item[0:-1], 0)
@@ -69,14 +72,35 @@ def calc_probabilities(training_corpus):
             trigram_count_pnodes[
                 item[0:-1]] = trigram_count_pnodes[item[0:-1]] + 1
     unigram_p = {
-        item: math.log(unigram_count[item], 2) - math.log(unigram_count_pnodes[item[0:-1]], 2)
-        for item in set(unigram_count)}
+        item: math.log(
+            unigram_count[item],
+            2) -
+        math.log(
+            unigram_count_pnodes[
+                item[
+                    0:-
+                    1]],
+            2) for item in set(unigram_count)}
     bigram_p = {
-        item: math.log(bigram_count[item], 2) -
-              math.log(bigram_count_pnodes[item[0:- 1]], 2) for item in set(bigram_count)}
+        item: math.log(
+            bigram_count[item],
+            2) -
+        math.log(
+            bigram_count_pnodes[
+                item[
+                    0:-
+                    1]],
+            2) for item in set(bigram_count)}
     trigram_p = {
-        item: math.log(trigram_count[item], 2) -
-              math.log(trigram_count_pnodes[item[0:- 1]], 2) for item in set(trigram_count)}
+        item: math.log(
+            trigram_count[item],
+            2) -
+        math.log(
+            trigram_count_pnodes[
+                item[
+                    0:-
+                    1]],
+            2) for item in set(trigram_count)}
     print "calc_probabilities finished!"
     return unigram_p, bigram_p, trigram_p
 
@@ -172,10 +196,28 @@ def score_output(scores, filename):
 # Calculates scores (log probabilities) for every sentence with a linearly interpolated model
 # Each ngram argument is a python dictionary where the keys are tuples that express an ngram and the value is the log probability of that ngram
 # Like score(), this function returns a python list of scores
+# TODO: `EM` algorithm to find the optimal weights.
 
 
 def linearscore(unigrams, bigrams, trigrams, corpus):
     scores = []
+    weights = (1. / 3, 1. / 3, 1. / 3,)
+    for i, sentence in enumerate(corpus):
+        if i % 3000 == 0:
+            print 'linearscore ', i, 'th sentence...'
+        score_i = 0
+        tokens = sentence.split()
+        trigram_tuples = list(nltk.trigrams(tokens))
+        try:
+            for trigram in trigram_tuples:
+                score_i += log2(sum([weights[0] * 2 ** trigrams[trigram[0:]],
+                                     weights[1] * 2 ** bigrams[trigram[1:]],
+                                     weights[2] * 2 ** unigrams[trigram[2:]],
+                                    ]))
+        except KeyError as e:
+            score_i = MINUS_INFINITY_SENTENCE_LOG_PROB
+            print i, 'th sentence', 'ngram ', trigram, ' not in dict', e.message
+        scores.append(score_i)
     return scores
 
 DATA_PATH = 'data/'
@@ -208,7 +250,6 @@ def main():
     score_output(uniscores, OUTPUT_PATH + 'A2.uni.txt')
     score_output(biscores, OUTPUT_PATH + 'A2.bi.txt')
     score_output(triscores, OUTPUT_PATH + 'A2.tri.txt')
-    sys.exit(0)
 
     # linear interpolation (question 3)
     linearscores = linearscore(unigrams, bigrams, trigrams, corpus)
