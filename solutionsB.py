@@ -63,8 +63,6 @@ def calc_trigrams(brown_tags):
 
 # This function takes output from calc_trigrams() and outputs it in the
 # proper format
-
-
 def q2_output(q_values, filename):
     outfile = open(filename, "w")
     trigrams = sorted(q_values.keys())
@@ -94,8 +92,6 @@ def calc_known(brown_words):
 # Takes the words from the training data and a set of words that should not be replaced for '_RARE_'
 # Returns the equivalent to brown_words but replacing the unknown words by
 # '_RARE_' (use RARE_SYMBOL constant)
-
-
 def replace_rare(brown_words, known_words):
     brown_words_rare = []
     for words in brown_words:
@@ -141,8 +137,6 @@ def calc_emission(brown_words_rare, brown_tags):
     return e_values, taglist
 
 # This function takes the output from calc_emissions() and outputs it
-
-
 def q4_output(e_values, filename):
     outfile = open(filename, "w")
     emissions = sorted(e_values.keys())
@@ -280,8 +274,6 @@ def q5_output(tagged, filename):
 # brown_dev_words is the data that should be tagged
 # The return value is a list of tagged sentences in the format "WORD/TAG", separated by spaces. Each sentence is a string with a
 # terminal newline, not a list of tokens.
-
-
 def nltk_tagger(brown_words, brown_tags, brown_dev_words):
     # Hint: use the following line to format data to what NLTK expects for
     # training
@@ -290,6 +282,12 @@ def nltk_tagger(brown_words, brown_tags, brown_dev_words):
 
     # IMPLEMENT THE REST OF THE FUNCTION HERE
     tagged = []
+    default_tagger = nltk.DefaultTagger('NOUN')
+    bigram_tagger = nltk.BigramTagger(training, backoff=default_tagger)
+    trigram_tagger = nltk.TrigramTagger(training, backoff=bigram_tagger)
+    for dev_words in brown_dev_words:
+        tagged_i = ' '.join([ele[0]+'/'+ele[1] for ele in bigram_tagger.tag(dev_words)] + ['\n'])
+        tagged.append(tagged_i)
     return tagged
 
 # This function takes the output of nltk_tagger() and outputs it to file
@@ -363,7 +361,6 @@ def main():
 
     # question 5 output
     q5_output(viterbi_tagged, OUTPUT_PATH + 'B5.txt')
-    sys.exit(0)
 
     # do nltk tagging here
     nltk_tagged = nltk_tagger(brown_words, brown_tags, brown_dev_words)
