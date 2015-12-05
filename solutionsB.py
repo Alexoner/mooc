@@ -17,18 +17,19 @@ LOG_PROB_OF_ZERO = -1000
 # Each sentence is a string of space separated "WORD/TAG" tokens, with a newline character in the end.
 # Remember to include start and stop symbols in your returned lists, as defined by the constants START_SYMBOL and STOP_SYMBOL.
 # brown_words (the list of words) should be a list where every element is a list of the tags of a particular sentence.
-# brown_tags (the list of tags) should be a list where every element is a list of the tags of a particular sentence.
+# brown_tags (the list of tags) should be a list where every element is a
+# list of the tags of a particular sentence.
 def split_wordtags(brown_train):
     brown_words = []
     brown_tags = []
     for i, sentence_tagged in enumerate(brown_train):
         brown_words_i = []
         brown_tags_i = []
-        words_tagged = ' '.join([START_SYMBOL+'/'+START_SYMBOL,
-                                 START_SYMBOL+'/'+START_SYMBOL,
+        words_tagged = ' '.join([START_SYMBOL + '/' + START_SYMBOL,
+                                 START_SYMBOL + '/' + START_SYMBOL,
                                  sentence_tagged,
-                                 STOP_SYMBOL+'/'+STOP_SYMBOL,
-                                ]).split()
+                                 STOP_SYMBOL + '/' + STOP_SYMBOL,
+                                 ]).split()
         re_pattern = re.compile(r'(.*)/([^0-9]+)')
         for word_tagged in words_tagged:
             matched = re_pattern.match(word_tagged)
@@ -42,7 +43,8 @@ def split_wordtags(brown_train):
 
 # TODO: IMPLEMENT THIS FUNCTION
 # This function takes tags from the training data and calculates tag trigram probabilities.
-# It returns a python dictionary where the keys are tuples that represent the tag trigram, and the values are the log probability of that trigram
+# It returns a python dictionary where the keys are tuples that represent
+# the tag trigram, and the values are the log probability of that trigram
 def calc_trigrams(brown_tags):
     q_values = {}
     q_count = {}
@@ -59,13 +61,16 @@ def calc_trigrams(brown_tags):
                 for gram in set(q_count)}
     return q_values
 
-# This function takes output from calc_trigrams() and outputs it in the proper format
+# This function takes output from calc_trigrams() and outputs it in the
+# proper format
+
+
 def q2_output(q_values, filename):
     outfile = open(filename, "w")
-    trigrams = q_values.keys()
-    trigrams.sort()
+    trigrams = sorted(q_values.keys())
     for trigram in trigrams:
-        output = " ".join(['TRIGRAM', trigram[0], trigram[1], trigram[2], str(q_values[trigram])])
+        output = " ".join(['TRIGRAM', trigram[0], trigram[1],
+                           trigram[2], str(q_values[trigram])])
         outfile.write(output + '\n')
     outfile.close()
 
@@ -87,7 +92,10 @@ def calc_known(brown_words):
 
 # TODO: IMPLEMENT THIS FUNCTION
 # Takes the words from the training data and a set of words that should not be replaced for '_RARE_'
-# Returns the equivalent to brown_words but replacing the unknown words by '_RARE_' (use RARE_SYMBOL constant)
+# Returns the equivalent to brown_words but replacing the unknown words by
+# '_RARE_' (use RARE_SYMBOL constant)
+
+
 def replace_rare(brown_words, known_words):
     brown_words_rare = []
     for words in brown_words:
@@ -99,6 +107,8 @@ def replace_rare(brown_words, known_words):
     return brown_words_rare
 
 # This function takes the ouput from replace_rare and outputs it to a file
+
+
 def q3_output(rare, filename):
     outfile = open(filename, 'w')
     for sentence in rare:
@@ -125,16 +135,17 @@ def calc_emission(brown_words_rare, brown_tags):
             tags_count[brown_tags[i][j]] = tags_count[brown_tags[i][j]] + 1
             taglist.add(brown_tags[i][j])
 
-    e_values = {(word, tag) : math.log(cnt, 2) -
-                              math.log(tags_count[tag], 2)
+    e_values = {(word, tag): math.log(cnt, 2) -
+                math.log(tags_count[tag], 2)
                 for (word, tag), cnt in tags_words_count.items()}
     return e_values, taglist
 
 # This function takes the output from calc_emissions() and outputs it
+
+
 def q4_output(e_values, filename):
     outfile = open(filename, "w")
-    emissions = e_values.keys()
-    emissions.sort()
+    emissions = sorted(e_values.keys())
     for item in emissions:
         output = " ".join([item[0], item[1], str(e_values[item])])
         outfile.write(output + '\n')
@@ -155,15 +166,17 @@ def q4_output(e_values, filename):
 # original words of the sentence!
 def viterbi(brown_dev_words, taglist, known_words, q_values, e_values):
     tagged = []
+    print 'tagging {} sentences'.format(len(brown_dev_words))
     for i, dev_words in enumerate(brown_dev_words):
-        if i+1 % 100 == 0:
-            print "tagging",i+1,"th sentence"
-        tokens = [START_SYMBOL]*2 + dev_words.split() + [STOP_SYMBOL]
+        tokens = [START_SYMBOL] * 2 + dev_words + [STOP_SYMBOL]
         # tokens = dev_words.split()
         tagged_i = viterbi_dp(tokens, taglist, known_words, q_values, e_values)
         tagged.append(tagged_i)
-    import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
+        if (i+1) % 100 == 0:
+            print "tagging", i + 1, "th sentence"
+            print tagged_i
     return tagged
+
 
 def viterbi_dp(tokens, tagset, known_words, q_values, e_values):
     """
@@ -179,44 +192,82 @@ def viterbi_dp(tokens, tagset, known_words, q_values, e_values):
     # initialization
     for i in xrange(K):
         for j in xrange(K):
-            message[1][tags[i], tags[j]] = LOG_PROB_OF_ZERO
-    message[1][START_SYMBOL, START_SYMBOL] = 0
+            message[1][i, j] = LOG_PROB_OF_ZERO
+    message[1][tags.index(START_SYMBOL), tags.index(START_SYMBOL)] = 0
 
-    #maintenance
-    for n in xrange(2, N-1):
+    # maintenance
+    for n in xrange(2, N):
         message.append({})
         backpointer.append({})
 
         for j in xrange(K):
+            # consider only emission probability greater than zero
+            if tokens[n-1] not in known_words and (RARE_SYMBOL, tags[j]) not in e_values:
+                continue
+            if tokens[n-1] in known_words and (tokens[n-1], tags[j]) not in e_values:
+                continue
             for k in xrange(K):
-                message_max = float('-inf')
+                if tokens[n] not in known_words:
+                    # print "rare word", tokens[n]
+                    token = RARE_SYMBOL
+                else:
+                    token = tokens[n]
+                # consider only emission probability greater than zero
+                if (token, tags[k]) not in e_values:
+                    message_curr = float('-inf')
+                    # print (token, tags[k]), "not in emission probability"
+                    # print (token, tags[k]) in e_values, (tags[i], tags[j], tags[k]) in q_values
+                    continue
+                # print (token, tags[k]), "in emission probability"
+                message[n][j, k] = float('-inf')
+                backpointer[n][j, k] = float('-inf')
                 for i in xrange(K):
-                    if tokens[n] not in known_words:
-                        print "rare word", tokens[n]
-                        token = RARE_SYMBOL
-                    else:
-                        token = token[n]
                     # consider only emission probability greater than zero
-                    if (token, tags[k]) not in e_values:
+                    if tokens[n-2] not in known_words and (RARE_SYMBOL, tags[i]) not in e_values:
+                        # print RARE_SYMBOL, tags[i],'not in emission'
                         continue
-                    message[n][j, k] = max(message[n-1][i, j] +
-                                           q_values[tags[i], tags[j], tags[k]] +
-                                           e_values[tags[k], token])
-                    if message[n][j, k] > message_max:
-                        message_max = message[n][j, k]
+                    if tokens[n-2] in known_words and (tokens[n-2], tags[i]) not in e_values:
+                        # print tokens[n-2], tags[i],'not in emission'
+                        continue
+                    if (i, j) not in message[n-1]:
+                        # print (i, j), 'not in message[{}-1]'.format(n)
+                        continue
+                    if ( tags[i], tags[j], tags[k]) not in q_values:
+                        q_values[tags[i], tags[j], tags[k]] = LOG_PROB_OF_ZERO
+
+                    try:
+                        message_curr = message[n - 1][i, j] + q_values[
+                            tags[i], tags[j], tags[k]] + e_values[token, tags[k]]
+                    except:
+                        import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
+                        pass
+                    if message_curr >= message[n][j, k]:
+                        message[n][j, k] = message_curr
                         backpointer[n][j, k] = i
+                if backpointer[n][j, k] == float('-inf'):
+                    import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
+                    # print "message[{}][{}, {}] is {}".format(n, j, k, message[n][j, k])
+                    raise Exception("{}th token,backpointer minus infinity!".format(n))
 
     # termination
     path = [-1] * N
-    (path[n-3], path[n-2]) = message[N-1].keys()[np.argmax(message[N-1].values())]
+    (path[N - 2], path[N - 1]) = max(message[N - 1], key=message[N-1].get)
 
-    for n in xrange(n-4, 1, -1):
-        path[n] = backpointer[n+2][path[n+1], path[n+2]]
+    try:
+        for n in xrange(N - 3, 1, -1):
+            path[n] = backpointer[n + 2][path[n + 1], path[n + 2]]
+    except Exception as e:
+        import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
+        raise e
+        pass
 
     # collect result
-    return
+    return ' '.join([tokens[i] + '/' + tags[path[i]]
+                     for i in xrange(2, N - 1)] + ['\n'])
 
 # This function takes the output of viterbi() and outputs it to file
+
+
 def q5_output(tagged, filename):
     outfile = open(filename, 'w')
     for sentence in tagged:
@@ -229,15 +280,21 @@ def q5_output(tagged, filename):
 # brown_dev_words is the data that should be tagged
 # The return value is a list of tagged sentences in the format "WORD/TAG", separated by spaces. Each sentence is a string with a
 # terminal newline, not a list of tokens.
+
+
 def nltk_tagger(brown_words, brown_tags, brown_dev_words):
-    # Hint: use the following line to format data to what NLTK expects for training
-    training = [ zip(brown_words[i],brown_tags[i]) for i in xrange(len(brown_words)) ]
+    # Hint: use the following line to format data to what NLTK expects for
+    # training
+    training = [zip(brown_words[i], brown_tags[i])
+                for i in xrange(len(brown_words))]
 
     # IMPLEMENT THE REST OF THE FUNCTION HERE
     tagged = []
     return tagged
 
 # This function takes the output of nltk_tagger() and outputs it to file
+
+
 def q6_output(tagged, filename):
     outfile = open(filename, 'w')
     for sentence in tagged:
@@ -246,6 +303,7 @@ def q6_output(tagged, filename):
 
 DATA_PATH = 'data/'
 OUTPUT_PATH = 'output/'
+
 
 def main():
     # start timer
@@ -268,7 +326,8 @@ def main():
     # calculate list of words with count > 5 (question 3)
     known_words = calc_known(brown_words)
 
-    # get a version of brown_words with rare words replace with '_RARE_' (question 3)
+    # get a version of brown_words with rare words replace with '_RARE_'
+    # (question 3)
     brown_words_rare = replace_rare(brown_words, known_words)
 
     # question 3 output
@@ -283,7 +342,6 @@ def main():
     # delete unneceessary data
     del brown_train
     del brown_words_rare
-    sys.exit(0)
 
     # open Brown development data (question 5)
     infile = open(DATA_PATH + "Brown_dev.txt", "r")
@@ -296,10 +354,16 @@ def main():
         brown_dev_words.append(sentence.split(" ")[:-1])
 
     # do viterbi on brown_dev_words (question 5)
-    viterbi_tagged = viterbi(brown_dev_words, taglist, known_words, q_values, e_values)
+    viterbi_tagged = viterbi(
+        brown_dev_words,
+        taglist,
+        known_words,
+        q_values,
+        e_values)
 
     # question 5 output
     q5_output(viterbi_tagged, OUTPUT_PATH + 'B5.txt')
+    sys.exit(0)
 
     # do nltk tagging here
     nltk_tagged = nltk_tagger(brown_words, brown_tags, brown_dev_words)
@@ -310,4 +374,5 @@ def main():
     # print total time to run Part B
     print "Part B time: " + str(time.clock()) + ' sec'
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
