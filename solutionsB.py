@@ -3,6 +3,7 @@ import nltk
 import math
 import time
 import re
+import numpy as np
 
 START_SYMBOL = '*'
 STOP_SYMBOL = 'STOP'
@@ -118,7 +119,8 @@ def calc_emission(brown_words_rare, brown_tags):
     for i, words_rare in enumerate(brown_words_rare):
         for j, word in enumerate(words_rare):
             tags_words_count.setdefault((word, brown_tags[i][j]), 0)
-            tags_words_count[(word, brown_tags[i][j])] = tags_words_count[(word, brown_tags[i][j])] + 1
+            tags_words_count[(word, brown_tags[i][j])] = tags_words_count[
+                (word, brown_tags[i][j])] + 1
             tags_count.setdefault(brown_tags[i][j], 0)
             tags_count[brown_tags[i][j]] = tags_count[brown_tags[i][j]] + 1
             taglist.add(brown_tags[i][j])
@@ -153,7 +155,66 @@ def q4_output(e_values, filename):
 # original words of the sentence!
 def viterbi(brown_dev_words, taglist, known_words, q_values, e_values):
     tagged = []
+    for i, dev_words in enumerate(brown_dev_words):
+        if i+1 % 100 == 0:
+            print "tagging",i+1,"th sentence"
+        tokens = [START_SYMBOL]*2 + dev_words.split() + [STOP_SYMBOL]
+        # tokens = dev_words.split()
+        tagged_i = viterbi_dp(tokens, taglist, known_words, q_values, e_values)
+        tagged.append(tagged_i)
+    import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
     return tagged
+
+def viterbi_dp(tokens, tagset, known_words, q_values, e_values):
+    """
+    Dynamic programming routine in viterbi algorithm
+    """
+    message = [{}, {}]
+    backpointer = [{}, {}]
+    tags = list(tagset)
+    wordlist = list(known_words) + [RARE_SYMBOL]
+    K = len(tags)
+    N = len(tokens)
+
+    # initialization
+    for i in xrange(K):
+        for j in xrange(K):
+            message[1][tags[i], tags[j]] = LOG_PROB_OF_ZERO
+    message[1][START_SYMBOL, START_SYMBOL] = 0
+
+    #maintenance
+    for n in xrange(2, N-1):
+        message.append({})
+        backpointer.append({})
+
+        for j in xrange(K):
+            for k in xrange(K):
+                message_max = float('-inf')
+                for i in xrange(K):
+                    if tokens[n] not in known_words:
+                        print "rare word", tokens[n]
+                        token = RARE_SYMBOL
+                    else:
+                        token = token[n]
+                    # consider only emission probability greater than zero
+                    if (token, tags[k]) not in e_values:
+                        continue
+                    message[n][j, k] = max(message[n-1][i, j] +
+                                           q_values[tags[i], tags[j], tags[k]] +
+                                           e_values[tags[k], token])
+                    if message[n][j, k] > message_max:
+                        message_max = message[n][j, k]
+                        backpointer[n][j, k] = i
+
+    # termination
+    path = [-1] * N
+    (path[n-3], path[n-2]) = message[N-1].keys()[np.argmax(message[N-1].values())]
+
+    for n in xrange(n-4, 1, -1):
+        path[n] = backpointer[n+2][path[n+1], path[n+2]]
+
+    # collect result
+    return
 
 # This function takes the output of viterbi() and outputs it to file
 def q5_output(tagged, filename):
