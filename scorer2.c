@@ -2,13 +2,13 @@
  *
  *    N O T E !!!!  (Rada 06/11/01)
  * For this code to work, it is VERY important that all input files
- * (i.e. key, answer and sensemap) are SORTED 
+ * (i.e. key, answer and sensemap) are SORTED
  *
  */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
+/*#include <malloc.h>*/
 
 #define TRUE 1
 #define FALSE 0
@@ -34,7 +34,7 @@ typedef struct
 {FILE * pointer;
  char * name;
  char * line;
- long int length_of_line;} 
+ long int length_of_line;}
 i_o_block;
 
 typedef struct
@@ -57,7 +57,7 @@ void fnewline (FILE * out)
 boolean strequal (char * first_string, char * second_string)
 
 {int i;
- 
+
  if (first_string == NULL || second_string == NULL) return FALSE;
 
  for (i = 0; first_string [i] != '\0' && second_string [i] != '\0'; i++)
@@ -105,9 +105,9 @@ void addstr (char ** target_string, char * source_string)
 
  i = 0;
  if (*target_string != NULL)
-   while (*(*target_string + i) != '\0') 
+   while (*(*target_string + i) != '\0')
      i++;
- 
+
  j = 0;
  while (source_string [j] != '\0') j++;
 
@@ -176,7 +176,7 @@ long int length_of_file (char * file_name)
 
   {if ((file_to_be_measured = fopen (file_name, "r")) != NULL)
     {while (fgetc (file_to_be_measured) != EOF) counter++;
-     counter++;}   
+     counter++;}
 
    fclose (file_to_be_measured);}
 
@@ -207,7 +207,7 @@ long int length_of_longest_line_in (char * file_name)
 
 boolean open_file (i_o_block * file_to_open, char * mode)
 
-{if (file_to_open != NULL) 
+{if (file_to_open != NULL)
   {file_to_open -> length_of_line = length_of_longest_line_in (file_to_open -> name);
    file_to_open -> line = make_buffer_of_size (file_to_open -> length_of_line);
    if (mode != NULL)
@@ -217,9 +217,9 @@ boolean open_file (i_o_block * file_to_open, char * mode)
    return (file_to_open -> pointer != NULL);}
 
  return FALSE;}
- 
+
 void close_file (i_o_block * file_to_close)
- 
+
 {if (file_to_close != NULL)
   {fclose (file_to_close -> pointer);
    file_to_close -> pointer = NULL;
@@ -228,8 +228,8 @@ void close_file (i_o_block * file_to_close)
    file_to_close -> line = NULL;
    reclaim (file_to_close -> name);
    file_to_close -> name = NULL;}
- 
- return;} 
+
+ return;}
 
 boolean read_line (i_o_block * file_to_read)
 
@@ -258,7 +258,7 @@ string_table * make_string_table (void)
      new -> initial_bound [i] [j] [1] = 0;}
 
  return new;}
- 
+
 void reclaim_string_table (string_table * table_to_reclaim)
 
 {if (table_to_reclaim != NULL)
@@ -292,7 +292,7 @@ void build_initial_bounds_of_table (string_table * table_to_build)
          current_first_letter = table_entry [0] - 'a';
          current_second_letter = table_entry [1] - 'a';
          table_to_build -> initial_bound [current_first_letter] [current_second_letter] [0] = i;}}}
-        
+
    if (current_first_letter != NOT_FOUND)
      table_to_build -> initial_bound [current_first_letter] [current_second_letter] [1] = i;}
 
@@ -319,10 +319,10 @@ if (word == NULL || table_to_search == NULL || table_to_search -> index == NULL)
    low_bound = 0;}
 
  new_middle = (high_bound + low_bound) / 2;
-  
+
  do
   {i = new_middle;
-  
+
   for (j = 0; word [j] != '\0'; j++)
      {
        if (word [j] < table_to_search -> index [i] [j])
@@ -358,7 +358,7 @@ string_table * unsorted_string_table_for (char * file_name)
  if (file_name != NULL)
   {if ((words = fopen (file_name, "r")) != NULL)
      while ((file_character = fgetc (words)) != EOF)
-      {if (file_character == '\n') 
+      {if (file_character == '\n')
         (new -> last_entry)++;
        characters_seen++;}
    fclose (words);}
@@ -402,7 +402,7 @@ char ** tokenize (char * line)
  int last_token = 0;
  int i;
 
- if (line != NULL) 
+ if (line != NULL)
    tokens = (char **) calloc (strlen (line) + 1, sizeof (char *));
  else
    tokens = (char **) calloc (1, sizeof (char *));
@@ -412,8 +412,8 @@ char ** tokenize (char * line)
  if (line != NULL)
    for (i = 0; line [i] != '\0'; i++)
     {if (line [i] == ' ' || line [i] == '\n' || line [i] == '\t')
-      {line [i] = '\0';    
-       if (tokens [last_token] != NULL) 
+      {line [i] = '\0';
+       if (tokens [last_token] != NULL)
         {last_token++;
          tokens [last_token] = NULL;}}
 
@@ -421,7 +421,7 @@ char ** tokenize (char * line)
      if (tokens [last_token] == NULL)
        tokens [last_token] = &(line [i]);}
 
- if (tokens [last_token] != NULL) 
+ if (tokens [last_token] != NULL)
   {last_token++;
    tokens [last_token] = NULL;}
 
@@ -432,7 +432,7 @@ char * coarse_sense_tag_for (char * tag, string_table * sense_table)
 {char * coarse_tag;
  long int sense_index;
  int i;
- 
+
  coarse_tag = tag;
 
  sense_index = search_string_table (tag, sense_table);
@@ -450,7 +450,7 @@ float subsumption_probability_of_tags (char * subsumer, char * tag, string_table
  long int sense_index;
  int i;
  int j;
- 
+
  sense_index = search_string_table (tag, sense_table);
 
  if (sense_index != NOT_FOUND && subsumer != NULL)
@@ -499,18 +499,18 @@ int main (int argc, char * argv [])
   int k;
 
  if (argc < 3)
-  {fnewline (stderr);   
+  {fnewline (stderr);
    fprintf (stderr, "This scorer requires two command-line arguments in the");
-   fnewline (stderr);   
+   fnewline (stderr);
    fprintf (stderr, "following order:");
-   fnewline (stderr);   
+   fnewline (stderr);
    fnewline (stderr);
    fprintf (stderr, "   ANSWER FILE NAME (name of a file containing formatted answers)");
    fnewline (stderr);
-   fnewline (stderr);   
+   fnewline (stderr);
    fprintf (stderr, "   KEY FILE NAME (name of an answer-key file)");
    fnewline (stderr);
-   fnewline (stderr);   
+   fnewline (stderr);
    fprintf (stderr, "Optionally, the following may be appended:");
    fnewline (stderr);
    fnewline (stderr);
@@ -518,20 +518,20 @@ int main (int argc, char * argv [])
    fnewline (stderr);
    fprintf (stderr, "     - without this file, only fine-grained scoring is available,\n");
    fprintf (stderr, "       and illformed sense tags will lower precision (rather than recall)");
-   fnewline (stderr);   
+   fnewline (stderr);
    fnewline (stderr);
    fprintf (stderr, "   %s", GRANULARITY_FLAG);
    fprintf (stderr, " (specifies granularity: ");
    fprintf (stderr, "\"%s\" or \"%s\"; \"fine\" is default)", COARSE_GRAIN_FLAG, MIXED_GRAIN_FLAG);
-   fnewline (stderr);   
+   fnewline (stderr);
    fnewline (stderr);
    fprintf (stderr, "   %s", MINIMAL_SCORING_FLAG);
    fprintf (stderr, " (causes exclusion of instances tagged with multiple tags in key)");
-   fnewline (stderr);   
+   fnewline (stderr);
    fnewline (stderr);
    fprintf (stderr, "   %s", VERBOSITY_FLAG);
    fprintf (stderr, " (causes line-by-line scoring calculations to be printed)");
-   fnewline (stderr);   
+   fnewline (stderr);
    fnewline (stderr);
    invalid_argument_seen = TRUE;}
 
@@ -576,7 +576,7 @@ int main (int argc, char * argv [])
    global_score = 0.0;
    instances = 0.0;
    instances_attempted = 0.0;
-   
+
    if (sense_table_arg > 0) {
      sense_table = string_table_for (argv [sense_table_arg]);
    } else {
@@ -589,7 +589,7 @@ int main (int argc, char * argv [])
    for (key_index = 0; key_index < key -> last_entry; key_index++) {
 
      /* Re-format the key's first two fields, which specify the test instance to be answered */
-     
+
      for (i = 0; key -> index [key_index] [i] != '\0'; i++)
        if (key -> index [key_index] [i] == ' ') {
 	 key -> index [key_index] [i] = '_';
@@ -598,7 +598,7 @@ int main (int argc, char * argv [])
 	   {i++;}
 	 break;
        }
-	 
+
      if (key -> index [key_index] [i] == ' ') {
 
        key_tag [key_index] = tokenize (&(key -> index [key_index] [i]));
@@ -614,17 +614,17 @@ int main (int argc, char * argv [])
 	     for (j = i; key_tag [key_index] [j] != NULL; j++)
 	       key_tag [key_index] [j] = key_tag [key_index] [j + 1];
 	     i--;
-	   } 
+	   }
 	   else
              if (!(strequal (coarse_sense_tag, key_tag [key_index] [i])))
                key_tag [key_index] [i] = coarse_sense_tag;
 	 }
-       
+
        /* If filter criteria for this instance aren't matched, mark the key to exclude it from scoring */
-       
+
        if (minimal_scoring_desired && key_tag [key_index] [0] != NULL && key_tag [key_index] [1] != NULL)
 	 key_tag [key_index] [0] = NULL;
-       
+
        if (key_tag [key_index] [0] != NULL) instances += 1.0;
 
        /*break;*/
@@ -641,14 +641,14 @@ int main (int argc, char * argv [])
        if (has_prefix (&(answer -> index [answer_index] [i]), COMMENT_DELIMITER))
         {answer -> index [answer_index] [i] = '\0';
          break;}
-     
+
      /* Re-format the answer's first two fields, which specify the test instance which is being answered */
 
      for (i = 0; answer -> index [answer_index] [i] != '\0'; i++)
        if (answer -> index [answer_index] [i] == ' ')
         {answer -> index [answer_index] [i] = '_';
          while (answer -> index [answer_index] [i] != '\0')
-          {if (answer -> index [answer_index] [i] == ' ') 
+          {if (answer -> index [answer_index] [i] == ' ')
             {answer -> index [answer_index] [i] = '\0';
              i++;
              break;}
@@ -659,7 +659,7 @@ int main (int argc, char * argv [])
 
      answer_tag = tokenize (&(answer -> index [answer_index] [i]));
 
-     i = 0; 
+     i = 0;
      while (answer_tag [i] != NULL) i++;
      answer_weight = (float *) calloc (i + 1, sizeof (float));
 
@@ -709,21 +709,21 @@ int main (int argc, char * argv [])
            for (j = i; answer_tag [j] != NULL; j++)
             {answer_tag [j] = answer_tag [j + 1];
              answer_weight [j] = answer_weight [j + 1];}
-           i--;} 
+           i--;}
          else
          if (!(strequal (coarse_sense_tag, answer_tag [i])))
            answer_tag [i] = coarse_sense_tag;}
 
      /* If weights don't form a probability distribution on sense tags (plus implicit no-guess tag), normalize them */
 
-     if (total_weight > 1.0) 
+     if (total_weight > 1.0)
       {for (i = 0; answer_tag [i] != NULL; i++) answer_weight [i] /= total_weight;
        total_weight = 1.0;}
 
      /* Look up the correct answer for this test instance in the key */
 
      key_index = search_string_table (answer -> index [answer_index], key);
-     
+
      /* If there is such a test instance, and it hasn't been scored already or excluded by filter criteria */
 
      if (key_index != NOT_FOUND && answer_tag [0] != NULL && key_tag [key_index] [0] != NULL)
@@ -745,7 +745,7 @@ int main (int argc, char * argv [])
           {if (strequal (answer_tag [i], key_tag [key_index] [j]))
              subscore += 1.0;
            else
-	     
+
 	     /* If correct tag subsumes the answer, give full credit under mixed-grain scoring */
 
            if (strequal (sense_granularity, MIXED_GRAIN_FLAG) &&
@@ -757,8 +757,8 @@ int main (int argc, char * argv [])
 
            if (strequal (sense_granularity, MIXED_GRAIN_FLAG))
              subscore += subsumption_probability_of_tags (answer_tag [i], key_tag [key_index] [j], sense_table);}
-  
-	 
+
+
          if (subscore > 1.0) subscore = 1.0;
 
          score += subscore * answer_weight [i];}
@@ -771,11 +771,11 @@ int main (int argc, char * argv [])
         {printf ("score for \"%s\": %.3f", key -> index [key_index], score);
          newline ();
          printf (" key   =");
-         for (i = 0; key_tag [key_index] [i] != NULL; i++) 
+         for (i = 0; key_tag [key_index] [i] != NULL; i++)
            printf (" %s", key_tag [key_index] [i]);
          newline ();
          printf (" guess =");
-         for (i = 0; answer_tag [i] != NULL; i++) 
+         for (i = 0; answer_tag [i] != NULL; i++)
            printf (" %s%c%.3f", answer_tag [i], WEIGHT_DELIMITER, answer_weight [i]);
          newline ();
          newline ();}
@@ -783,7 +783,7 @@ int main (int argc, char * argv [])
        /* Reset the key for this test instance so a second answer to this instance won't be counted redundantly */
 
        key_tag [key_index] [0] = NULL;}
-   
+
      else
 
       {fprintf (stderr, "Unable to score answer for \"%s\" (line %ld):", answer -> index [answer_index], answer_index);
