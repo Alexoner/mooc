@@ -134,7 +134,9 @@ def print_results(results ,output_file):
     with open(output_file, 'w') as f:
         try:
             map(lambda item: map(lambda t:
-                                f.write(item[0]+' '+t[0]+' '+t[1]+'\n'), item[1]),
+                                 f.write(replace_accented(
+                                     item[0]+' '+t[0]+' '+t[1]+'\n')),
+                                 item[1]),
                 sorted(results.items(), cmp))
         except Exception as e:
             print e
