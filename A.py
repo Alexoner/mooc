@@ -1,9 +1,10 @@
 from main import replace_accented
 from sklearn import svm
 from sklearn import neighbors
-import sys
+from sklearn import preprocessing
 import nltk
 import numpy as np
+import sys
 from scipy import sparse
 import operator
 
@@ -102,25 +103,33 @@ def classify(X_train, X_test, y_train):
     svm_results = []
     knn_results = []
 
-    svm_clf = svm.LinearSVC()
-    knn_clf = neighbors.KNeighborsClassifier()
+    # svm_clf = svm.SVC(gamma=0.001, C=1.)
+    svm_clf = svm.LinearSVC(C=0.01)
+    knn_clf = neighbors.KNeighborsClassifier(10, weights='uniform')
+    # the label encoder seems not necessary
+    label_encoder = preprocessing.LabelEncoder()
+    label_encoder.fit(y_train.values())
 
-    # sparse.csr_matrsparse.csr_matrsparse.csr_matrixixiximplement your code here
+    # implement your code here
     # X_train_arr = sparse.csr_matrix(np.array(X_train.values()))
     # y_train_arr = sparse.csr_matrix(np.array(y_train.values()))
     # X_test_arr = sparse.csr_matrix(np.array(X_test.values()))
     X_train_arr = np.array(X_train.values())
-    y_train_arr = np.array(y_train.values())
+    y_train_arr = np.array(label_encoder.transform(y_train.values()))
     X_test_arr = np.array(X_test.values())
     svm_clf.fit(X_train_arr, y_train_arr)
     knn_clf.fit(X_train_arr, y_train_arr)
-    svm_results = zip(X_test.keys(), svm_clf.predict(X_test_arr))
-    knn_results += zip(X_test.keys(), knn_clf.predict(X_test_arr))
+    svm_predicted = svm_clf.predict(X_test_arr)
+    knn_predicted = knn_clf.predict(X_test_arr)
+    svm_results = zip(X_test.keys(),
+                      label_encoder.inverse_transform(svm_predicted))
+    knn_results += zip(X_test.keys(),
+                       label_encoder.inverse_transform(knn_predicted))
 
     return svm_results, knn_results
 
 # A.3, A.4 output
-def print_results(results ,output_file):
+def print_results(results, output_file):
     '''
 
     :param results: A dictionary with key = lexelt and value = a list of tuples (instance_id, label)
@@ -140,7 +149,6 @@ def print_results(results ,output_file):
                 sorted(results.items(), cmp))
         except Exception as e:
             print e
-            import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
             pass
 
 # run part A
