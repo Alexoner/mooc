@@ -70,7 +70,7 @@ def vectorize(data, s):
                 list(nltk.word_tokenize(t[3]))[0:window_size+1])
         except Exception as e:
             # print data, s
-            print 'word', 'not in s ', e
+            # print 'word', 'not in s ', e
             pass
         vectors[t[0]] = context_vector
         labels[t[0]] = t[4]
@@ -104,7 +104,7 @@ def classify(X_train, X_test, y_train):
     knn_results = []
 
     # svm_clf = svm.SVC(gamma=0.001, C=1.)
-    svm_clf = svm.LinearSVC(C=0.01)
+    svm_clf = svm.LinearSVC(C=10.)
     knn_clf = neighbors.KNeighborsClassifier(10, weights='uniform')
     # the label encoder seems not necessary
     label_encoder = preprocessing.LabelEncoder()
@@ -146,7 +146,8 @@ def print_results(results, output_file):
                                  f.write(replace_accented(
                                      item[0]+' '+t[0]+' '+t[1]+'\n')),
                                  item[1]),
-                sorted(results.items(), cmp))
+                map(lambda result: (result[0], sorted(result[1], cmp)),
+                    sorted(results.items())))
         except Exception as e:
             print e
             pass
@@ -160,7 +161,7 @@ def run(train, test, language, knn_file, svm_file):
         X_train, y_train = vectorize(train[lexelt], s[lexelt])
         X_test, _ = vectorize(test[lexelt], s[lexelt])
         svm_results[lexelt], knn_results[lexelt] = classify(X_train, X_test, y_train)
-        print 'predicted results:', svm_results[lexelt], knn_results[lexelt]
+        # print 'predicted results:', svm_results[lexelt], knn_results[lexelt]
 
     print_results(svm_results, svm_file)
     print_results(knn_results, knn_file)
