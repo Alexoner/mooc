@@ -34,7 +34,8 @@ def build_s(data):
         words = set()
         map(lambda t: map(lambda w: words.add(w),
                           list(nltk.word_tokenize(t[1]))[-window_size:] +
-                          list(nltk.word_tokenize(t[3]))[0:window_size+1]),
+                          list(nltk.word_tokenize(t[3]))[0:window_size]
+                         ),
             data[lexelt])
         s[lexelt] = list(words)
     map(get_context_words, data)
@@ -62,14 +63,18 @@ def vectorize(data, s):
     labels = {}
 
     # implement your code here
+    s_set = set(s)
     def vectorize_one(t):
         context_vector = map(lambda x: 0, s)
+        def inc_one(word):
+            if word in s_set:
+                operator.setitem(context_vector, s.index(word), context_vector[s.index(word)]+1)
+
         try:
-            map(lambda word: operator.setitem(context_vector, s.index(word), context_vector[s.index(word)]+1),
+            map(lambda word: inc_one(word),
                 list(nltk.word_tokenize(t[1]))[-window_size:] +
-                list(nltk.word_tokenize(t[3]))[0:window_size+1])
+                list(nltk.word_tokenize(t[3]))[0:window_size])
         except Exception as e:
-            # print data, s
             # print 'word', 'not in s ', e
             pass
         vectors[t[0]] = context_vector
@@ -104,27 +109,30 @@ def classify(X_train, X_test, y_train):
     knn_results = []
 
     # svm_clf = svm.SVC(gamma=0.001, C=1.)
-    svm_clf = svm.LinearSVC(C=10.)
-    knn_clf = neighbors.KNeighborsClassifier(10, weights='uniform')
+    #C=100,10,1.0,0.1,0.1,0.01,0.001,0.0001
+    # 1.0:0.536, 0.51, 0.1: , 0.01:0.543, 0.005:0.536, 0.075:0.538, 0.015:0.541, 0.011:0.541, 0.0109: 0.540
+    svm_clf = svm.LinearSVC(C=1.01)
+    # k=4:0.48, 5:0.492, 6: 0.499, 7:0.510, 8:0.518, 9:0.519, 10:0.529, 11:0.532, 14:0.535
+    knn_clf = neighbors.KNeighborsClassifier(14)
     # the label encoder seems not necessary
     label_encoder = preprocessing.LabelEncoder()
     label_encoder.fit(y_train.values())
 
     # implement your code here
-    # X_train_arr = sparse.csr_matrix(np.array(X_train.values()))
+    X_train_arr = sparse.csr_matrix(np.array(X_train.values()))
     # y_train_arr = sparse.csr_matrix(np.array(y_train.values()))
-    # X_test_arr = sparse.csr_matrix(np.array(X_test.values()))
-    X_train_arr = np.array(X_train.values())
+    X_test_arr = sparse.csr_matrix(np.array(X_test.values()))
+    # X_train_arr = np.array(X_train.values())
     y_train_arr = np.array(label_encoder.transform(y_train.values()))
-    X_test_arr = np.array(X_test.values())
+    # X_test_arr = np.array(X_test.values())
     svm_clf.fit(X_train_arr, y_train_arr)
     knn_clf.fit(X_train_arr, y_train_arr)
     svm_predicted = svm_clf.predict(X_test_arr)
     knn_predicted = knn_clf.predict(X_test_arr)
     svm_results = zip(X_test.keys(),
                       label_encoder.inverse_transform(svm_predicted))
-    knn_results += zip(X_test.keys(),
-                       label_encoder.inverse_transform(knn_predicted))
+    knn_results = zip(X_test.keys(),
+                      label_encoder.inverse_transform(knn_predicted))
 
     return svm_results, knn_results
 
@@ -143,8 +151,10 @@ def print_results(results, output_file):
     with open(output_file, 'w') as f:
         try:
             map(lambda item: map(lambda t:
-                                 f.write(replace_accented(
-                                     item[0]+' '+t[0]+' '+t[1]+'\n')),
+                                 f.write('{0} {1} {2}\n'.format(
+                                     replace_accented(item[0]),
+                                     replace_accented(t[0]),
+                                     replace_accented(unicode(t[1])))),
                                  item[1]),
                 map(lambda result: (result[0], sorted(result[1], cmp)),
                     sorted(results.items())))
@@ -161,7 +171,6 @@ def run(train, test, language, knn_file, svm_file):
         X_train, y_train = vectorize(train[lexelt], s[lexelt])
         X_test, _ = vectorize(test[lexelt], s[lexelt])
         svm_results[lexelt], knn_results[lexelt] = classify(X_train, X_test, y_train)
-        # print 'predicted results:', svm_results[lexelt], knn_results[lexelt]
 
     print_results(svm_results, svm_file)
     print_results(knn_results, knn_file)
