@@ -90,14 +90,14 @@ def extract_features(data, language='English'):
         feature_surrounding_words = {}
         feature_surrounding_pos = {}
         collocation_size = 3
+        def extract_surrounding_words(index_word):
+            key = 'SW_'+unicode(index_word[0])+'_'+index_word[1]
+            feature_surrounding_words[key] = 1
         if language.lower() in ['english', 'spanish']:
             if language.lower() == 'spanish':
                 collocation_size = 2
             collocation_words = tokens_left[-collocation_size:] +\
                 [instance[2]] + tokens_right[0:collocation_size]
-            def extract_surrounding_words(index_word):
-                key = 'SW_'+unicode(index_word[0])+'_'+index_word[1]
-                feature_surrounding_words[key] = 1
             map(extract_surrounding_words, enumerate(collocation_words))
 
             tokens_normalized_tagged = extract_features.tagger.tag(tokens_normalized)
@@ -106,9 +106,11 @@ def extract_features(data, language='English'):
             tokens_right_normalized_tagged = tokens_normalized_tagged[len(tokens_left_normalized)+1:]
             tokens_surrounding_normalized_tagged = tokens_left_normalized_tagged[-collocation_size:] \
                 + [ tokens_head_normalized_tagged] + tokens_right_normalized_tagged[0:collocation_size]
-            def extract_surrounding_pos(index_word_tag):
-                key = 'SPOS_'+unicode(index_word_tag[0] - collocation_size)+'_'+index_word_tag[-1][-1]
-                feature_surrounding_pos[key] = 1
+        def extract_surrounding_pos(index_word_tag):
+            key = 'SPOS_'+unicode(index_word_tag[0] - collocation_size)+'_'+index_word_tag[-1][-1]
+            feature_surrounding_pos[key] = 1
+
+        if language.lower() in ['english', 'spanish']:
             map(extract_surrounding_pos,
                 enumerate(tokens_surrounding_normalized_tagged))
 
@@ -152,7 +154,8 @@ def extract_features(data, language='English'):
                                  # hyponym.name().split('.')[0]] = 1
                     # feature_nyms[key_pre+'SYN_HYPO_POS_'+
                                  # hyponym.pos()] = 1
-        map(extract_xnyms, enumerate(tokens_surrounding_normalized_tagged))
+        if language.lower() in ['english',]:
+            map(extract_xnyms, enumerate(tokens_surrounding_normalized_tagged))
 
         features[instance[0]] = dict(feature_window_words.items()
                                      + feature_surrounding_pos.items()
@@ -267,6 +270,7 @@ def classify(X_train, X_test, y_train):
     # implement your code here
 
     # SVM
+    # for English, set C=.10,others 1.0
     svm_clf = svm.LinearSVC(C=.10, verbose=0, random_state=0)
     # knn_clf = neighbors.KNeighborsClassifier(14)
     # the label encoder seems not necessary
