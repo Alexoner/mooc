@@ -48,11 +48,17 @@ def extract_features(data, language='English'):
         # data)
     # senses_count = sum(sense_ids.values())
     def extract_features_each_instance(instance):
+        feature_window_words = {}
+
         tokens_left = list(nltk.word_tokenize(instance[1]))
         tokens_right = list(nltk.word_tokenize(instance[3]))
         tokens = tokens_left + [instance[2]] + tokens_right
         context_words = tokens_left[-window_size:] + tokens_right[0:window_size]
-        feature_window_words = {}
+
+        tokens_left_normalized = tokens_left
+        tokens_right_normalized = tokens_right
+        tokens_normalized = tokens
+        context_words_normalized = context_words
 
         # b)
         # Remove stop words, remove punctuations, do stemming, etc
@@ -60,14 +66,14 @@ def extract_features(data, language='English'):
             # stop words
             stop_words = stopwords.words(language.lower())
 
-            tokens_left = filter(lambda token: token not in stop_words + list(string.punctuation),
+            tokens_left_normalized = filter(lambda token: token not in stop_words + list(string.punctuation),
                                  list(nltk.wordpunct_tokenize(instance[1])))
-            tokens_left = map(lambda token: extract_features.stemmer.stem(token), tokens_left)
-            tokens_right = filter(lambda token: token not in stop_words + list(string.punctuation),
+            tokens_left_normalized = map(lambda token: extract_features.stemmer.stem(token), tokens_left)
+            tokens_right_normalized = filter(lambda token: token not in stop_words + list(string.punctuation),
                                   list(nltk.wordpunct_tokenize(instance[3])))
-            tokens_right = map(lambda token: extract_features.stemmer.stem(token), tokens_right)
-            tokens = tokens_left + [instance[2]] + tokens_right
-            context_words = tokens_left[-window_size:] + tokens_right[0:window_size]
+            tokens_right_normalized = map(lambda token: extract_features.stemmer.stem(token), tokens_right)
+            tokens_normalized = tokens_left_normalized + [instance[2]] + tokens_right_normalized
+            context_words_normalized = tokens_left[-window_size:] + tokens_right[0:window_size]
 
         def inc_count(word):
             '''
@@ -75,7 +81,7 @@ def extract_features(data, language='English'):
             key = 'BOW_' + word
             feature_window_words.setdefault(key, 0)
             feature_window_words[key] += 1
-        map(inc_count, context_words)
+        map(inc_count, context_words_normalized)
 
         # a)
         # collocational features
@@ -94,17 +100,17 @@ def extract_features(data, language='English'):
                 feature_surrounding_words[key] = 1
             map(extract_surrounding_words, enumerate(collocation_words))
 
-            tokens_tagged = extract_features.tagger.tag(tokens)
-            tokens_left_tagged = tokens_tagged[0:len(tokens_left)]
-            tokens_head_tagged = tokens_tagged[len(tokens_left)]
-            tokens_right_tagged = tokens_tagged[len(tokens_left)+1:]
-            tokens_surrounding_tagged = tokens_left_tagged[-collocation_size:] \
-                + [ tokens_head_tagged] + tokens_right_tagged[0:collocation_size]
+            tokens_normalized_tagged = extract_features.tagger.tag(tokens_normalized)
+            tokens_left_normalized_tagged = tokens_normalized_tagged[0:len(tokens_left_normalized)]
+            tokens_head_normalized_tagged = tokens_normalized_tagged[len(tokens_left_normalized)]
+            tokens_right_normalized_tagged = tokens_normalized_tagged[len(tokens_left_normalized)+1:]
+            tokens_surrounding_normalized_tagged = tokens_left_normalized_tagged[-collocation_size:] \
+                + [ tokens_head_normalized_tagged] + tokens_right_normalized_tagged[0:collocation_size]
             def extract_surrounding_pos(index_word_tag):
                 key = 'SPOS_'+unicode(index_word_tag[0] - collocation_size)+'_'+index_word_tag[-1][-1]
                 feature_surrounding_pos[key] = 1
             map(extract_surrounding_pos,
-                enumerate(tokens_surrounding_tagged))
+                enumerate(tokens_surrounding_normalized_tagged))
 
 
         # c)
@@ -127,25 +133,26 @@ def extract_features(data, language='English'):
             synsets = wn.synsets(index_word_tag[1][0])
             key_pre = unicode(index_word_tag[0])+'_'
             for synset in synsets:
-                if extract_xnyms.wn_tag2treebank[synset.pos()] != index_word_tag[1][1]:
+                if synset.pos() in extract_xnyms.wn_tag2treebank \
+                        and extract_xnyms.wn_tag2treebank[synset.pos()] != index_word_tag[1][1]:
                     continue
                 feature_nyms[key_pre+'SYN_NAME_'+synset.name().split('.')[0]] = 1
-                feature_nyms[key_pre+'SYN_POS_'+synset.pos()] = 1
-                for hypernym in synset.hypernyms():
-                    if extract_xnyms.wn_tag2treebank[hypernym.pos()] != index_word_tag[1][1]:
-                        continue
-                    feature_nyms[key_pre+'SYN_HYPER_NAME_'+
-                                 hypernym.name().split('.')[0]] = 1
-                    feature_nyms[key_pre+'SYN_HYPER_POS_'+
-                                 hypernym.pos()] = 1
-                for hyponym in synset.hyponyms():
-                    if extract_xnyms.wn_tag2treebank[hyponym.pos()] != index_word_tag[1][1]:
-                        continue
-                    feature_nyms[key_pre+'SYN_HYPO_NAME_'+
-                                 hyponym.name().split('.')[0]] = 1
-                    feature_nyms[key_pre+'SYN_HYPO_POS_'+
-                                 hyponym.pos()] = 1
-        # map(extract_xnyms, enumerate(tokens_surrounding_tagged))
+                # feature_nyms[key_pre+'SYN_POS_'+synset.pos()] = 1
+                # for hypernym in synset.hypernyms():
+                    # if extract_xnyms.wn_tag2treebank[hypernym.pos()] != index_word_tag[1][1]:
+                        # continue
+                    # feature_nyms[key_pre+'SYN_HYPER_NAME_'+
+                                 # hypernym.name().split('.')[0]] = 1
+                    # feature_nyms[key_pre+'SYN_HYPER_POS_'+
+                                 # hypernym.pos()] = 1
+                # for hyponym in synset.hyponyms():
+                    # if extract_xnyms.wn_tag2treebank[hyponym.pos()] != index_word_tag[1][1]:
+                        # continue
+                    # feature_nyms[key_pre+'SYN_HYPO_NAME_'+
+                                 # hyponym.name().split('.')[0]] = 1
+                    # feature_nyms[key_pre+'SYN_HYPO_POS_'+
+                                 # hyponym.pos()] = 1
+        map(extract_xnyms, enumerate(tokens_surrounding_normalized_tagged))
 
         features[instance[0]] = dict(feature_window_words.items()
                                      + feature_surrounding_pos.items()
@@ -261,7 +268,7 @@ def classify(X_train, X_test, y_train):
 
     # SVM
     svm_clf = svm.LinearSVC(C=.10, verbose=0, random_state=0)
-    knn_clf = neighbors.KNeighborsClassifier(14)
+    # knn_clf = neighbors.KNeighborsClassifier(14)
     # the label encoder seems not necessary
     label_encoder = preprocessing.LabelEncoder()
     label_encoder.fit(y_train.values())
@@ -274,14 +281,14 @@ def classify(X_train, X_test, y_train):
     y_train_arr = np.array(label_encoder.transform(_y_train))
     # X_test_arr = np.array(X_test.values())
     svm_clf.fit(X_train_arr, y_train_arr)
-    knn_clf.fit(X_train_arr, y_train_arr)
+    # knn_clf.fit(X_train_arr, y_train_arr)
     svm_predicted = svm_clf.predict(X_test_arr)
-    knn_predicted = knn_clf.predict(X_test_arr)
+    # knn_predicted = knn_clf.predict(X_test_arr)
     svm_score = svm_clf.score(X_train_arr, y_train_arr)
     svm_results = zip(X_test.keys(),
                       label_encoder.inverse_transform(svm_predicted))
-    knn_results = zip(X_test.keys(),
-                      label_encoder.inverse_transform(knn_predicted))
+    # knn_results = zip(X_test.keys(),
+                      # label_encoder.inverse_transform(knn_predicted))
     print "svm score:", svm_score
     # GBDT
 
