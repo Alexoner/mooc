@@ -16,14 +16,12 @@ from nltk import ConditionalFreqDist
 import nltk.data, nltk.tag
 from nltk.corpus import (stopwords, wordnet as wn)
 import math
-import operator
+import string
 
 # You might change the window size
 # 10:0.524, 11: 0.537,12: 0.534, 12: 0.534, 13:0.535, 14:0.524, 15:0.530
 window_size = 10
 
-# stop words
-english_stops = stopwords.words('english')
 # B.1.a,b,c,d
 def extract_features(data, language='English'):
     '''
@@ -58,6 +56,18 @@ def extract_features(data, language='English'):
 
         # b)
         # Remove stop words, remove punctuations, do stemming, etc
+        if language.lower() in ['english', 'spanish']:
+            # stop words
+            stop_words = stopwords.words(language.lower())
+
+            tokens_left = filter(lambda token: token not in stop_words + list(string.punctuation),
+                                 list(nltk.wordpunct_tokenize(instance[1])))
+            tokens_left = map(lambda token: extract_features.stemmer.stem(token), tokens_left)
+            tokens_right = filter(lambda token: token not in stop_words + list(string.punctuation),
+                                  list(nltk.wordpunct_tokenize(instance[3])))
+            tokens_right = map(lambda token: extract_features.stemmer.stem(token), tokens_right)
+            tokens = tokens_left + [instance[2]] + tokens_right
+            context_words = tokens_left[-window_size:] + tokens_right[0:window_size]
 
         def inc_count(word):
             '''
@@ -73,27 +83,29 @@ def extract_features(data, language='English'):
         # part-of-speech tags,-2,...,2.
         feature_surrounding_words = {}
         feature_surrounding_pos = {}
-        collocation_size = 2
-        collocation_words = tokens_left[-collocation_size:] +\
-            [instance[2]] + tokens_right[0:collocation_size]
-        def extract_surrounding_words(index_word):
-            key = 'SW_'+unicode(index_word[0])+'_'+index_word[1]
-            try:
+        collocation_size = 3
+        if language.lower() in ['english', 'spanish']:
+            if language.lower() == 'spanish':
+                collocation_size = 2
+            collocation_words = tokens_left[-collocation_size:] +\
+                [instance[2]] + tokens_right[0:collocation_size]
+            def extract_surrounding_words(index_word):
+                key = 'SW_'+unicode(index_word[0])+'_'+index_word[1]
                 feature_surrounding_words[key] = 1
-            except Exception as e:
-                print( e, collocation_words)
-                pass
-        map(extract_surrounding_words, enumerate(collocation_words))
+            map(extract_surrounding_words, enumerate(collocation_words))
 
-        # tokens_tagged = extract_features.tagger.tag(tokens)
-        # tokens_left_tagged = tokens_tagged[0:len(tokens_left)]
-        # tokens_head_tagged = tokens_tagged[len(tokens_left)]
-        # tokens_right_tagged = tokens_tagged[len(tokens_left)+1:]
-        # def extract_surrounding_pos(index_word_tag):
-            # key = 'SPOS_'+unicode(index_word_tag[0])+'_'+index_word_tag[-1][-1]
-            # feature_surrounding_pos[key] = 1
-        # map(extract_surrounding_pos,
-            # enumerate(tokens_left_tagged +[tokens_head_tagged]+ tokens_right_tagged))
+        if language.lower() in ['english', 'spanish']:
+            tokens_tagged = extract_features.tagger.tag(tokens)
+            tokens_left_tagged = tokens_tagged[0:len(tokens_left)]
+            tokens_head_tagged = tokens_tagged[len(tokens_left)]
+            tokens_right_tagged = tokens_tagged[len(tokens_left)+1:]
+            tokens_surrounding_tagged = tokens_left_tagged[-collocation_size:] \
+                + [ tokens_head_tagged] + tokens_right_tagged[0:collocation_size]
+            def extract_surrounding_pos(index_word_tag):
+                key = 'SPOS_'+unicode(index_word_tag[0] - collocation_size)+'_'+index_word_tag[-1][-1]
+                feature_surrounding_pos[key] = 1
+            map(extract_surrounding_pos,
+                enumerate(tokens_surrounding_tagged))
 
 
         # c)
@@ -130,7 +142,7 @@ def extract_features(data, language='English'):
 
         features[instance[0]] = dict(feature_window_words.items()
                                      + feature_surrounding_pos.items()
-                                     # + feature_surrounding_words.items()
+                                     + feature_surrounding_words.items()
                                      )
         labels[instance[0]] = instance[-1]
 
@@ -197,11 +209,21 @@ def feature_selection(X_train,X_test,y_train):
 
 
     # implement your code here
+    X_train_new = X_train
+    X_test_new = X_test
 
+    _y_train = map(lambda key: y_train[key], X_train.keys())
+    selectorKBest = SelectKBest(chi2, k=len(X_train.items()[0][1]) - 100).fit(
+        X_train.values(), _y_train)
+    X_train_selected = selectorKBest.transform(X_train.values())
+    X_test_selected = selectorKBest.transform(X_test.values())
+    X_train_new = dict(map(lambda index_key: (X_train.keys()[index_key[0]], X_train_selected[index_key[0]]),
+                        enumerate(X_train.keys())))
+    X_test_new = dict(map(lambda index_key: (X_test.keys()[index_key[0]], X_test_selected[index_key[0]]),
+                        enumerate(X_test.keys())))
     #return X_train_new, X_test_new
     # or return all feature (no feature selection):
-    # X_train = dict(map(lambda key:(key, X_train[key]), y_train.keys()))
-    return X_train, X_test
+    return X_train_new, X_test_new
 
 # B.2
 def classify(X_train, X_test, y_train):
@@ -263,16 +285,22 @@ def classify(X_train, X_test, y_train):
 
 # run part B
 def run(train, test, language, answer):
-    print 'running B'
+    print 'running B for language:', language
     results = {}
+    if language.lower() in ['english', 'spanish']:
+        extract_features.stemmer = nltk.SnowballStemmer(language.lower())
 
     for lexelt in train:
 
         train_features, y_train = extract_features(train[lexelt], language=language)
-        test_features, _ = extract_features(test[lexelt])
+        test_features, _ = extract_features(test[lexelt], language=language)
 
         X_train, X_test = vectorize(train_features,test_features)
-        X_train_new, X_test_new = feature_selection(X_train, X_test,y_train)
+        if language.lower() in ['english', 'spanish']:
+            X_train_new, X_test_new = feature_selection(X_train, X_test,y_train)
+        else:
+            X_train_new = X_train
+            X_test_new = X_test
         results[lexelt] = classify(X_train_new, X_test_new,y_train)
 
     A.print_results(results, answer)
