@@ -1,9 +1,10 @@
 #!/bin/sh
 echo "running"
-ipython2 main.py data/English-train.xml data/English-dev.xml KNN-English.answer SVM-English.answer Best-English.answer English || { echo 'running failed'; exit 1; }
-#ipython2 main.py data/Catalan-train.xml data/Catalan-dev.xml KNN-Catalan.answer SVM-Catalan.answer Best-Catalan.answer Catalan
-#ipython2 main.py data/Spanish-train.xml data/Spanish-dev.xml KNN-Spanish.answer SVM-Spanish.answer Best-Spanish.answer Spanish
+ipython2 main.py data/English-train.xml data/English-dev.xml KNN-English.answer SVM-English.answer Best-English.answer English || { echo 'running failed'; exit 1; } &
+ipython2 main.py data/Catalan-train.xml data/Catalan-dev.xml KNN-Catalan.answer SVM-Catalan.answer Best-Catalan.answer Catalan &
+ipython2 main.py data/Spanish-train.xml data/Spanish-dev.xml KNN-Spanish.answer SVM-Spanish.answer Best-Spanish.answer Spanish &
 
+wait
 echo "scoring part A"
 #./scorer2 SVM-English.answer data/English-dev.key data/English.sensemap
 #./scorer2 KNN-English.answer data/English-dev.key data/English.sensemap
