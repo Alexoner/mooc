@@ -5,9 +5,7 @@ from sklearn import preprocessing
 from sklearn.feature_extraction import DictVectorizer
 import nltk
 import numpy as np
-import sys
 from scipy import sparse
-import operator
 
 # don't change the window size
 window_size = 10
