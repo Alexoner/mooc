@@ -8,7 +8,7 @@ def conv_relu_forward(x, w, b, conv_param):
   Inputs:
   - x: Input to the convolutional layer
   - w, b, conv_param: Weights and parameters for the convolutional layer
-  
+
   Returns a tuple of:
   - out: Output from the ReLU
   - cache: Object to give to the backward pass
@@ -62,7 +62,7 @@ def conv_relu_pool_backward(dout, cache):
 
 def affine_relu_forward(x, w, b):
   """
-  Convenience layer that perorms an affine transform followed by a ReLU
+  Convenience layer that peforms an affine transform followed by a ReLU
 
   Inputs:
   - x: Input to the affine layer

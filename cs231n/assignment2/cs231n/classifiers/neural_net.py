@@ -80,6 +80,11 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # Store the result in the scores variable, which should be an array of      #
   # shape (N, C).                                                             #
   #############################################################################
+  # forward-pass of a 3-layer neural network:
+  # activate = lambda x: 1.0/(1.0 + np.exp(-x)) # activation function (use sigmoid)
+  activate = lambda x: np.max(0, x) # activation function (use ReLU)
+  h1 = activate(np.dot(X, W1) + b1) # calculate first hidden layer activations (NxH)
+  out = np.dot(h1, W2) + b2 # output neuron (NxC)
   pass
   #############################################################################
   #                              END OF YOUR CODE                             #
@@ -98,6 +103,11 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # classifier loss. So that your results match ours, multiply the            #
   # regularization loss by 0.5                                                #
   #############################################################################
+  loss_data = 0
+  l2        = []
+  l2[0]     = np.sum(W1 ** 2)
+  l2[1]     = np.sum(W2 ** 2)
+  loss = np.sum(l2) + loss_data
   pass
   #############################################################################
   #                              END OF YOUR CODE                             #
