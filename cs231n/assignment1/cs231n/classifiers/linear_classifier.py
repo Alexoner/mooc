@@ -48,6 +48,9 @@ class LinearClassifier:
       # Hint: Use np.random.choice to generate indices. Sampling with         #
       # replacement is faster than sampling without replacement.              #
       #########################################################################
+      indices = np.random.choice(np.arange(num_train), (batch_size,), replace=True)
+      X_batch = X[:, indices]
+      y_batch = y[indices]
       pass
       #########################################################################
       #                       END OF YOUR CODE                                #
@@ -62,6 +65,7 @@ class LinearClassifier:
       # TODO:                                                                 #
       # Update the weights using the gradient and the learning rate.          #
       #########################################################################
+      self.W += -learning_rate * grad
       pass
       #########################################################################
       #                       END OF YOUR CODE                                #
@@ -95,10 +99,10 @@ class LinearClassifier:
     #                           END OF YOUR CODE                              #
     ###########################################################################
     return y_pred
-  
+
   def loss(self, X_batch, y_batch, reg):
     """
-    Compute the loss function and its derivative. 
+    Compute the loss function and its derivative.
     Subclasses will override this.
 
     Inputs:
