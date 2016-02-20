@@ -83,8 +83,8 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # forward-pass of a 3-layer neural network:
   # activate = lambda x: 1.0/(1.0 + np.exp(-x)) # activation function (use sigmoid)
   activate_relu = lambda x: np.maximum(0, x) # activation function (use ReLU)
-  h1 = activate_relu(np.dot(X, W1) + b1) # calculate first hidden layer activations (NxH)
-  out = np.dot(h1, W2) + b2 # output neuron (NxC)
+  layer_1 = activate_relu(np.dot(X, W1) + b1) # calculate first hidden layer activations (NxH)
+  out = np.dot(layer_1, W2) + b2 # output neuron (NxC)
   scores = out
   #############################################################################
   #                              END OF YOUR CODE                             #
@@ -103,12 +103,13 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # classifier loss. So that your results match ours, multiply the            #
   # regularization loss by 0.5                                                #
   #############################################################################
-  loss_data = 0
-  l2        = []
-  l2[0]     = np.sum(W1 ** 2)
-  l2[1]     = np.sum(W2 ** 2)
-  loss = np.sum(l2) + loss_data
-  pass
+  p = softmax(scores, axis=1)
+  loss_data = -np.sum(np.log(p)[np.arange(N), y])
+  loss_data /= N
+  l2        = [0, 0]
+  l2[0]     = np.sum(W1 * W1)
+  l2[1]     = np.sum(W2 * W2)
+  loss = loss_data + 0.5 * reg * np.sum(l2)
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
@@ -127,3 +128,13 @@ def two_layer_net(X, model, y=None, reg=0.0):
 
   return loss, grads
 
+def softmax(Z, axis=0):
+  # the softmax function
+  Z_max = np.max(Z, axis=axis)
+  shape_reduced = list(Z.shape)
+  shape_reduced[axis] = -1
+  Z_max = Z_max.reshape(shape_reduced)
+  Z_normalized = Z - Z_max
+  logP = Z_normalized - np.log(np.sum(np.exp(Z_normalized), axis=axis)).reshape(shape_reduced)
+  P = np.exp(logP)
+  return P
