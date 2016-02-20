@@ -59,10 +59,10 @@ def two_layer_net(X, model, y=None, reg=0.0):
   - reg: Regularization strength.
 
   Returns:
-  If y not is passed, return a matrix scores of shape (N, C) where scores[i, c]
+  If y is not passed, return a matrix scores of shape (N, C) where scores[i, c]
   is the score for class c on input X[i].
 
-  If y is not passed, instead return a tuple of:
+  If y is passed, instead return a tuple of:
   - loss: Loss (data loss and regularization loss) for this batch of training
     samples.
   - grads: Dictionary mapping parameter names to gradients of those parameters
@@ -82,10 +82,10 @@ def two_layer_net(X, model, y=None, reg=0.0):
   #############################################################################
   # forward-pass of a 3-layer neural network:
   # activate = lambda x: 1.0/(1.0 + np.exp(-x)) # activation function (use sigmoid)
-  activate = lambda x: np.max(0, x) # activation function (use ReLU)
-  h1 = activate(np.dot(X, W1) + b1) # calculate first hidden layer activations (NxH)
+  activate_relu = lambda x: np.maximum(0, x) # activation function (use ReLU)
+  h1 = activate_relu(np.dot(X, W1) + b1) # calculate first hidden layer activations (NxH)
   out = np.dot(h1, W2) + b2 # output neuron (NxC)
-  pass
+  scores = out
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
