@@ -83,9 +83,10 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # forward-pass of a 3-layer neural network:
   # activate = lambda x: 1.0/(1.0 + np.exp(-x)) # activation function (use sigmoid)
   activate_relu = lambda x: np.maximum(0, x) # activation function (use ReLU)
-  layer_1 = activate_relu(np.dot(X, W1) + b1) # calculate first hidden layer activations (NxH)
-  out = np.dot(layer_1, W2) + b2 # output neuron (NxC)
-  scores = out
+  layer_1_in = np.dot(X, W1) + b1
+  layer_1_out = activate_relu(layer_1_in) # calculate first hidden layer activations (NxH)
+  layer_2_in = np.dot(layer_1_out, W2) + b2 # output neuron (NxC)
+  scores = layer_2_in
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
@@ -103,8 +104,10 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # classifier loss. So that your results match ours, multiply the            #
   # regularization loss by 0.5                                                #
   #############################################################################
-  p = softmax(scores, axis=1)
-  loss_data = -np.sum(np.log(p)[np.arange(N), y])
+  # layer two output
+  layer_2_out  = softmax(scores, axis=1)
+  P = layer_2_out
+  loss_data = -np.sum(np.log(P)[np.arange(N), y])
   loss_data /= N
   l2        = [0, 0]
   l2[0]     = np.sum(W1 * W1)
@@ -121,6 +124,19 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # and biases. Store the results in the grads dictionary. For example,       #
   # grads['W1'] should store the gradient on W1, and be a matrix of same size #
   #############################################################################
+  # dimension: N x C
+  delta_2 = np.zeros_like(scores)
+  T = np.zeros_like(P)
+  T[np.arange(N), y] = 1
+  delta_2 = P - T
+  grads['W2'] = np.dot(layer_1_out.T, delta_2)/N + reg*W2
+  grads['b2'] = np.sum(delta_2, axis=0)/N
+  dlayer_1_in = layer_1_in.copy()
+  dlayer_1_in[layer_1_in >= 0] = 1
+  dlayer_1_in[layer_1_in < 0] = 0
+  delta_1 = np.dot(delta_2, W2.T) * dlayer_1_in
+  grads['W1'] = np.dot(X.T, delta_1)/N + reg*W1
+  grads['b1'] = np.sum(delta_1, axis=0)/N
   pass
   #############################################################################
   #                              END OF YOUR CODE                             #
