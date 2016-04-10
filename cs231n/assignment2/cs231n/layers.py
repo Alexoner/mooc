@@ -12,7 +12,7 @@ def affine_forward(x, w, b):
   x - Input data, of shape (N, d_1, ..., d_k)
   w - Weights, of shape (D, M)
   b - Biases, of shape (M,)
-  
+
   Returns a tuple of:
   - out: output, of shape (N, M)
   - cache: (x, w, b)
@@ -22,7 +22,7 @@ def affine_forward(x, w, b):
   # TODO: Implement the affine forward pass. Store the result in out. You     #
   # will need to reshape the input into rows.                                 #
   #############################################################################
-  pass
+  out = np.dot(x.reshape((x.shape[0], -1)), w) + b
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -50,7 +50,11 @@ def affine_backward(dout, cache):
   #############################################################################
   # TODO: Implement the affine backward pass.                                 #
   #############################################################################
-  pass
+  N = x.shape[0]
+  D = np.prod(x.shape[1:])
+  dx = np.dot(dout, w.T).reshape(x.shape)
+  dw = np.dot(x.reshape((N, D)).T, dout)
+  db = np.sum(dout, axis=0)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -72,7 +76,7 @@ def relu_forward(x):
   #############################################################################
   # TODO: Implement the ReLU forward pass.                                    #
   #############################################################################
-  pass
+  out = np.maximum(x, 0)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -95,7 +99,7 @@ def relu_backward(dout, cache):
   #############################################################################
   # TODO: Implement the ReLU backward pass.                                   #
   #############################################################################
-  pass
+  dx = dout * (x >= 0)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -130,6 +134,7 @@ def conv_forward_naive(x, w, b, conv_param):
   # TODO: Implement the convolutional forward pass.                           #
   # Hint: you can use the function np.pad for padding.                        #
   #############################################################################
+  x_padded = np.pad(x.reshape((x.shape[0], -1)), conv_param['pad'])
   pass
   #############################################################################
   #                             END OF YOUR CODE                              #
