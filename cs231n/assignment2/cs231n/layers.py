@@ -151,11 +151,11 @@ def conv_forward_naive(x, w, b, conv_param):
           #f-th filter
           for i in range(0, Ho, 1):
               for j in range(0, Wo, 1):
-                  # sliding window forms arithmetic progression
+                  # sliding WINDOW forms arithmetic progression
                   Hw = i*stride
                   Ww = j*stride
                   window = x_padded[n,:, Hw:Hw+HH, Ww:Ww+WW]
-                  # convolve
+                  # CONVOLVE
                   out[n,f,i,j] = np.sum(window * w[f]) + b[f]
   pass
   #############################################################################
@@ -205,13 +205,15 @@ def conv_backward_naive(dout, cache):
       for f in range(F):
           for i in range(Ho):
               for j in range(Wo):
-                  # sliding window forms arithmetic progression
+                  # sliding WINDOW forms arithmetic progression
                   Hw = i*stride
                   Ww = j*stride
                   window = x_padded[n,:, Hw:Hw+HH, Ww:Ww+WW]
+                  # CONVOLVE
                   db[f] += dout[n,f,i,j] * 1
                   dw[f] += dout[n,f,i,j] * window
                   dx_padded[n,:, Hw:Hw+HH, Ww:Ww+WW] += dout[n,f,i,j] * w[f]
+  # remove the padding data
   dx = dx_padded[:, :, pad:-pad, pad:-pad]
   pass
   #############################################################################
@@ -239,6 +241,30 @@ def max_pool_forward_naive(x, pool_param):
   #############################################################################
   # TODO: Implement the max pooling forward pass                              #
   #############################################################################
+
+  # parameters
+  HH = pool_param['pool_height']
+  WW = pool_param['pool_width']
+  stride = pool_param['stride']
+
+  # shape
+  N, C, H, W = x.shape
+  Ho = 1 + (H + 2*0 - HH) / stride
+  Wo = 1 + (W + 2*0 - WW) / stride
+
+  # initialization
+  out = np.zeros((N, C, Ho, Wo))
+  for n in range(N):
+      for i in range(Ho):
+          for j in range(Wo):
+              # sliding WINDOW forms arithmetic progression
+              Hw = i*stride
+              Ww = j*stride
+              window = x[n,:, Hw:Hw+HH, Ww:Ww+WW]
+              # maximum value in the window's last two dimension
+              window_max = np.max(np.max(window, axis=-1),axis=-1)
+              # max pooling
+              out[n,:,i,j] = window_max
   pass
   #############################################################################
   #                             END OF YOUR CODE                              #
@@ -262,6 +288,35 @@ def max_pool_backward_naive(dout, cache):
   #############################################################################
   # TODO: Implement the max pooling backward pass                             #
   #############################################################################
+
+  # cache
+  x, pool_param = cache
+
+  # parameters
+  HH = pool_param['pool_height']
+  WW = pool_param['pool_width']
+  stride = pool_param['stride']
+
+  # shape
+  N, C, H, W = x.shape
+  N, C, Ho, Wo = dout.shape
+
+  # initialization
+  dx = np.zeros_like(x)
+
+  for n in range(N):
+      for i in range(Ho):
+          for j in range(Wo):
+              # sliding WINDOW forms arithmetic progression
+              Hw = i*stride
+              Ww = j*stride
+              window = x[n,:, Hw:Hw+HH, Ww:Ww+WW]
+              # maximum value in the window's last two dimension
+              window_max = np.max(np.max(window, axis=-1),axis=-1)
+              # max pooling back-propagation
+              for c in range(C):
+                  dx[n,c,Hw:Hw+HH, Ww:Ww+WW] = dout[n,c,i,j] * (
+                      window[c,:,:] == window_max[c])
   pass
   #############################################################################
   #                             END OF YOUR CODE                              #
