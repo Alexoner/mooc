@@ -1,4 +1,5 @@
 import numpy as np
+from im2col_cython import *
 
 def affine_forward(x, w, b):
   """
@@ -134,7 +135,28 @@ def conv_forward_naive(x, w, b, conv_param):
   # TODO: Implement the convolutional forward pass.                           #
   # Hint: you can use the function np.pad for padding.                        #
   #############################################################################
-  x_padded = np.pad(x.reshape((x.shape[0], -1)), conv_param['pad'])
+  N, C, H, W = x.shape
+  F, C, HH, WW = w.shape
+  # parameters
+  pad = conv_param['pad']
+  stride = conv_param['stride']
+  # output matrix shape
+  Ho = 1 + (H + 2*pad - HH) / stride
+  Wo = 1 + (W + 2*pad - WW) / stride
+  x_padded = np.pad(x, ((0,), (0,), (pad,), (pad,)), mode='constant', constant_values=(0, 0))
+  out = np.zeros((N, F, Ho, Wo))
+  for n in range(N):
+      #n-th example
+      for f in range(F):
+          #f-th filter
+          for i in range(0, Ho, 1):
+              for j in range(0, Wo, 1):
+                  # sliding window forms arithmetic progression
+                  Hw = i*stride
+                  Ww = j*stride
+                  window = x_padded[n,:, Hw:Hw+HH, Ww:Ww+WW]
+                  # convolve
+                  out[n,f,i,j] = np.sum(window * w[f]) + b[f]
   pass
   #############################################################################
   #                             END OF YOUR CODE                              #
@@ -158,8 +180,39 @@ def conv_backward_naive(dout, cache):
   """
   dx, dw, db = None, None, None
   #############################################################################
-  # TODO: Implement the convolutional backward pass.                          #
+  # TODO: Implement the convolutional backward pass.                          # XXX: Convolve back
+  #
   #############################################################################
+  # matrix shapes
+  x, w, b, conv_param = cache
+  N, F, Ho, Wo = dout.shape
+  F, C, HH, WW = w.shape
+  N, C, H, W = x.shape
+
+  # parameters
+  pad = conv_param['pad']
+  stride = conv_param['stride']
+
+  # initialization
+  x_padded = np.pad(x, ((0,), (0,), (pad,), (pad,)), mode='constant', constant_values=(0, 0))
+  dx = np.zeros(x.shape)
+  dx_padded = np.zeros_like(x_padded)
+  dw = np.zeros(w.shape)
+  db = np.zeros_like(b)
+
+  # iterative convolution routine
+  for n in range(N):
+      for f in range(F):
+          for i in range(Ho):
+              for j in range(Wo):
+                  # sliding window forms arithmetic progression
+                  Hw = i*stride
+                  Ww = j*stride
+                  window = x_padded[n,:, Hw:Hw+HH, Ww:Ww+WW]
+                  db[f] += dout[n,f,i,j] * 1
+                  dw[f] += dout[n,f,i,j] * window
+                  dx_padded[n,:, Hw:Hw+HH, Ww:Ww+WW] += dout[n,f,i,j] * w[f]
+  dx = dx_padded[:, :, pad:-pad, pad:-pad]
   pass
   #############################################################################
   #                             END OF YOUR CODE                              #
