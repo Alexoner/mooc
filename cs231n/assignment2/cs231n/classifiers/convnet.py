@@ -107,7 +107,7 @@ def init_two_layer_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 
 
 def fun_convnet(X, model, y=None, reg=0.0):
   """
-  [conv-relu-pool]xN - conv - relu - [affine]xM - [softmax or SVM]
+  [conv-relu-pool]x1 - conv - relu - [affine]x2 - [softmax or SVM]
 
   Compute the loss and gradient for a ConvNet. The architecture
   is [ conv-relu-pool ]x1-[ conv-relu ]x1-affine-softmax, where the conv layer uses stride-1 "same"
@@ -135,6 +135,7 @@ def fun_convnet(X, model, y=None, reg=0.0):
   # Unpack weights
   W1, b1, W2, b2, W3, b3 = model['W1'], model['b1'], model['W2'], model['b2'],\
           model['W3'], model['b3']
+  W4, b4 = model['W4'], model['b4']
   N, C, H, W = X.shape
 
   # We assume that the convolution is "same", so that the data has the same
@@ -151,7 +152,8 @@ def fun_convnet(X, model, y=None, reg=0.0):
   # Compute the forward pass
   a1, cache1 = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
   a2, cache2 = conv_relu_forward(a1, W2, b2, conv_param)
-  scores, cache3 = affine_forward(a2, W3, b3)
+  a3, cache3 = affine_forward(a2, W3, b3)
+  scores, cache4 = affine_forward(a3, W4, b4)
 
   if y is None:
     return scores
@@ -160,7 +162,8 @@ def fun_convnet(X, model, y=None, reg=0.0):
   data_loss, dscores = softmax_loss(scores, y)
 
   # Compute the gradients using a backward pass
-  da2, dW3, db3 = affine_backward(dscores, cache3)
+  da3, dW4, db4 = affine_backward(dscores, cache4)
+  da2, dW3, db3 = affine_backward(da3, cache3)
   da1, dW2, db2 = conv_relu_backward(da2, cache2)
   dX,  dW1, db1 = conv_relu_pool_backward(da1, cache1)
 
@@ -168,10 +171,16 @@ def fun_convnet(X, model, y=None, reg=0.0):
   dW1 += reg * W1
   dW2 += reg * W2
   dW3 += reg * W3
-  reg_loss = 0.5 * reg * sum(np.sum(W * W) for W in [W1, W2, W3])
+  dW4 += reg * W4
+  reg_loss = 0.5 * reg * sum(np.sum(W * W) for W in [W1, W2, W3, W4])
 
   loss = data_loss + reg_loss
-  grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2, 'W3': dW3, 'b3': db3}
+  grads = {
+      'W1': dW1, 'b1': db1,
+      'W2': dW2, 'b2': db2,
+      'W3': dW3, 'b3': db3,
+      'W4': dW4, 'b4': db4,
+  }
 
   return loss, grads
 
@@ -197,7 +206,7 @@ def init_fun_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 32),
   Returns:
   A dictionary mapping parameter names to numpy arrays containing:
     - W1, b1: Weights and biases for the convolutional layer
-    - W2, b2: Weights and biases for the fully-connected layer.
+    - W2, b2: Weights and biases for the convolutional sanwitch layer.
     - W3, b3: Weights and biases for the fully-connected layer.
     - W4, b4: Weights and biases for the fully-connected layer.
   """
@@ -209,8 +218,10 @@ def init_fun_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 32),
   model['b1'] = bias_scale * np.random.randn(num_filters)
   model['W2'] = weight_scale * np.random.randn(num_filters, num_filters, filter_size, filter_size)
   model['b2'] = bias_scale * np.random.randn(num_filters)
-  model['W3'] = weight_scale * np.random.randn(num_filters * H * W / 4, num_classes)
-  model['b3'] = bias_scale * np.random.randn(num_classes)
+  model['W3'] = weight_scale * np.random.randn(num_filters * H * W / 4, num_filters * H * W / 16)
+  model['b3'] = bias_scale * np.random.randn(num_filters * H * W / 16)
+  model['W4'] = weight_scale * np.random.randn(num_filters * H * W / 16, num_classes)
+  model['b4'] = bias_scale * np.random.randn(num_classes)
   return model
 
 

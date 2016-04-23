@@ -4,7 +4,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def activation_statistics(init_func=lambda fan_in, fan_out: np.random.randn(fan_in, fan_out) * 0.001):
+def activation_statistics(init_func=lambda fan_in, fan_out: np.random.randn(fan_in, fan_out) * 0.001, nonlinearity='tanh'):
     """TODO: Docstring for activation_statistics.
     Demonstrate activation statistics with different weight initialization
 
@@ -15,9 +15,9 @@ def activation_statistics(init_func=lambda fan_in, fan_out: np.random.randn(fan_
     # assume some uni gaussian 10-D input data
     D = np.random.randn(1000, 500)
     hidden_layer_sizes = [500]*10
-    nonlinearities = ['tanh']*len(hidden_layer_sizes)
+    nonlinearities = [nonlinearity]*len(hidden_layer_sizes)
 
-    act = {'tanh': lambda x: np.maximum(0,x), 'tanh': lambda x: np.tanh(x)}
+    act = {'relu': lambda x: np.maximum(0,x), 'tanh': lambda x: np.tanh(x)}
     Hs = {}
     for i in range(len(hidden_layer_sizes)):
         X = D if i == 0 else Hs[i-1] # input at this layer
