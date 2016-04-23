@@ -167,8 +167,8 @@ class ClassifierTrainer(object):
 
         # print progress if needed
         if verbose:
-          print ('Finished epoch %d / %d: cost %f, train: %f, val %f, lr %e'
-                 % (epoch, num_epochs, cost, train_acc, val_acc, learning_rate))
+          print ('Finished epoch %d / %d, iter %d: cost %f, train: %f, val %f, lr %e'
+                 % (epoch, num_epochs, it, cost, train_acc, val_acc, learning_rate))
 
     if verbose:
       print 'finished optimization. best validation accuracy: %f' % (best_val_acc, )
