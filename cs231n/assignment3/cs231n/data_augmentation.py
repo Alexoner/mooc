@@ -16,6 +16,17 @@ def random_flips(X):
   #############################################################################
   # TODO: Implement the random_flips function. Store the result in out.       #
   #############################################################################
+  N, _, _, _ = X.shape
+  out = np.zeros_like(X)
+  for n in range(N):
+      rand_indicator = np.random.rand()
+      if rand_indicator > 0.5:
+          # TODO: x flip
+          out[n,...] = X[n,...,::-1]
+          pass
+      else:
+          # TODO: y flip ? or do nothing?
+          out[n,...] = X[n,...]
   pass
   #############################################################################
   #                           END OF YOUR CODE                                #
@@ -43,6 +54,11 @@ def random_crops(X, crop_shape):
   #############################################################################
   # TODO: Implement the random_crops function. Store the result in out.       #
   #############################################################################
+  for n in range(N):
+      x0 = np.random.randint(0, W - WW + 1)
+      y0 = np.random.randint(0, H - HH + 1)
+      out[n,:] = X[n,:,y0:y0+HH,x0:x0+WW]
+      pass
   pass
   #############################################################################
   #                           END OF YOUR CODE                                #
@@ -73,11 +89,14 @@ def random_contrast(X, scale=(0.8, 1.2)):
   #############################################################################
   # TODO: Implement the random_contrast function. Store the result in out.    #
   #############################################################################
+  for n in range(N):
+      scalar = np.random.uniform(*scale)
+      out[n,...] = X[n,...] * scalar
   pass
   #############################################################################
   #                           END OF YOUR CODE                                #
   #############################################################################
-  
+
   return out
 
 
@@ -88,7 +107,7 @@ def random_tint(X, scale=(-10, 10)):
   the range given by scale. Add that color to each pixel of the image.
 
   Inputs:
-  - X: (N, C, W, H) array of image data
+  - X: (N, C, W, H) array of image data ??? (N, C, H, W)
   - scale: A tuple (low, high) giving the bounds for the random color that
     will be generated for each image.
 
@@ -103,6 +122,12 @@ def random_tint(X, scale=(-10, 10)):
   #############################################################################
   # TODO: Implement the random_tint function. Store the result in out.        #
   #############################################################################
+  W, H = X.shape[-2:]
+  random_colors = np.random.uniform(*scale, size=(N, C))
+  random_colors = np.repeat(random_colors, H, axis=-1).reshape(N,C,H).repeat(
+      W, axis=-1).reshape(N,C,H,W)
+  #  print(random_colors[0,:, :5, :5])
+  out = X + random_colors
   pass
   #############################################################################
   #                           END OF YOUR CODE                                #
@@ -128,7 +153,7 @@ def fixed_crops(X, crop_shape, crop_type):
     'br': Bottom right corner
 
   Returns:
-  Array of cropped data of shape (N, C, HH, WW) 
+  Array of cropped data of shape (N, C, HH, WW)
   """
   N, C, H, W = X.shape
   HH, WW = crop_shape

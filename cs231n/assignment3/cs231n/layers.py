@@ -12,7 +12,7 @@ def affine_forward(x, w, b):
   x - Input data, of shape (N, d_1, ..., d_k)
   w - Weights, of shape (D, M)
   b - Biases, of shape (M,)
-  
+
   Returns a tuple of:
   - out: output, of shape (N, M)
   - cache: (x, w, b)
@@ -107,6 +107,8 @@ def dropout_forward(x, dropout_param):
     # TODO: Implement the training phase forward pass for inverted dropout.   #
     # Store the dropout mask in the mask variable.                            #
     ###########################################################################
+    mask = (np.random.rand(*x.shape) < p) / p
+    out = x * mask
     pass
     ###########################################################################
     #                            END OF YOUR CODE                             #
@@ -115,6 +117,7 @@ def dropout_forward(x, dropout_param):
     ###########################################################################
     # TODO: Implement the test phase forward pass for inverted dropout.       #
     ###########################################################################
+    out = x
     pass
     ###########################################################################
     #                            END OF YOUR CODE                             #
@@ -141,6 +144,7 @@ def dropout_backward(dout, cache):
     # TODO: Implement the training phase forward pass for inverted dropout.   #
     # Store the dropout mask in the mask variable.                            #
     ###########################################################################
+    dx = dout * mask
     pass
     ###########################################################################
     #                            END OF YOUR CODE                             #
