@@ -32,7 +32,7 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0):
   - grads: Dictionary with the same keys as model, mapping parameter names to
     their gradients.
   """
-  
+
   # Unpack weights
   W1, b1, W2, b2 = model['W1'], model['b1'], model['W2'], model['b2']
   N, C, H, W = X.shape
@@ -72,7 +72,7 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0):
 
   loss = data_loss + reg_loss
   grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2}
-  
+
   return loss, grads
 
 
@@ -323,7 +323,7 @@ def five_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0,
   If y is None and extract_features is True, returns:
   - features: (N, H) array of features, where H is the number of neurons in the
     first affine layer.
-  
+
   If y is None and return_probs is True, returns:
   - probs: (N, L) array of normalized class probabilities, where probs[i][j]
     is the probability that X[i] has label j.
@@ -364,8 +364,9 @@ def five_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0,
     # TODO: Return features extracted from X.                                 #
     # HINT: This should be VERY simple!                                       #
     ###########################################################################
+    return a4
     ###########################################################################
-    #                         END OF YOUR CODE                                #  
+    #                         END OF YOUR CODE                                #
     ###########################################################################
     raise NotImplementedError()
   d4, cache5 = dropout_forward(a4, dropout_param)
@@ -392,8 +393,10 @@ def five_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0,
     # TODO: Return the gradient of the loss with respect to the input.        #
     # HINT: This should be VERY simple!                                       #
     ###########################################################################
+    dX, _, _ = conv_relu_pool_backward(da1, cache1)
+    return dX
     ###########################################################################
-    #                         END OF YOUR CODE                                #  
+    #                         END OF YOUR CODE                                #
     ###########################################################################
     raise NotImplementedError()
 
