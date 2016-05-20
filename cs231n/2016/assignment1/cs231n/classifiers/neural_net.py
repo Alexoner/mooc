@@ -74,11 +74,19 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
+    activate_relu = lambda x: np.maximum(0, x) # activation function (use ReLU)
+    # fully-connected layer
+    layer_1_out = np.dot(X, W1) + b1
+    # relu layer
+    layer_2_out = activate_relu(layer_1_out)
+    # fully-connected layer
+    layer_3_out = np.dot(layer_2_out, W2) + b2 # output neuron (NxC)
+    scores = layer_3_out
     pass
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
-    
+
     # If the targets are not given then jump out, we're done
     if y is None:
       return scores
@@ -92,6 +100,7 @@ class TwoLayerNet(object):
     # classifier loss. So that your results match ours, multiply the            #
     # regularization loss by 0.5                                                #
     #############################################################################
+    data_loss, dscores = softmax_loss(scores, y)
     pass
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -104,6 +113,22 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
+    dlayer_2_out = dscores.dot(W2.T)
+    grads['W2'] = layer_2_out.T.dot(dscores)
+    grads['b2'] = np.sum(dscores, axis=0)
+    dlayer_1_out = dlayer_2_out.copy()
+    dlayer_1_out[layer_1_out <= 0] = 0
+    grads['W1'] = X.T.dot(dlayer_1_out)
+    grads['b1'] = np.sum(dlayer_1_out, axis=0)
+
+    reg_loss = 0.0
+    for W in [W1, W2]:
+      reg_loss += 0.5 * reg * np.sum(W * W)
+
+    grads['W1'] += reg * W1
+    grads['W2'] += reg * W2
+
+    loss = data_loss + reg_loss
     pass
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -148,6 +173,9 @@ class TwoLayerNet(object):
       # TODO: Create a random minibatch of training data and labels, storing  #
       # them in X_batch and y_batch respectively.                             #
       #########################################################################
+      batch_mask = np.random.choice(num_train, batch_size)
+      X_batch = X[batch_mask, ...]
+      y_batch = y[batch_mask]
       pass
       #########################################################################
       #                             END OF YOUR CODE                          #
@@ -163,6 +191,8 @@ class TwoLayerNet(object):
       # using stochastic gradient descent. You'll need to use the gradients   #
       # stored in the grads dictionary defined above.                         #
       #########################################################################
+      for p in grads.keys():
+        self.params[p] += -learning_rate * grads[p]
       pass
       #########################################################################
       #                             END OF YOUR CODE                          #
@@ -208,6 +238,7 @@ class TwoLayerNet(object):
     ###########################################################################
     # TODO: Implement this function; it should be VERY simple!                #
     ###########################################################################
+    y_pred = np.argmax(self.loss(X), axis=1)
     pass
     ###########################################################################
     #                              END OF YOUR CODE                           #
@@ -216,3 +247,25 @@ class TwoLayerNet(object):
     return y_pred
 
 
+def softmax_loss(x, y):
+  """
+  Computes the loss and gradient for softmax classification.
+
+  Inputs:
+  - x: Input data, of shape (N, C) where x[i, j] is the score for the jth class
+    for the ith input.
+  - y: Vector of labels, of shape (N,) where y[i] is the label for x[i] and
+    0 <= y[i] < C
+
+  Returns a tuple of:
+  - loss: Scalar giving the loss
+  - dx: Gradient of the loss with respect to x
+  """
+  probs = np.exp(x - np.max(x, axis=1, keepdims=True))
+  probs /= np.sum(probs, axis=1, keepdims=True)
+  N = x.shape[0]
+  loss = -np.sum(np.log(probs[np.arange(N), y])) / N
+  dx = probs.copy()
+  dx[np.arange(N), y] -= 1
+  dx /= N
+  return loss, dx
