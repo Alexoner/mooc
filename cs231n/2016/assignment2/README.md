@@ -21,12 +21,12 @@ or on a virtual machine through Terminal.com.
 
 Terminal has created a separate subdomain to serve our class,
 [www.stanfordterminalcloud.com](https://www.stanfordterminalcloud.com). Register
-your account there. The Assignment 2 snapshot can then be found HERE. If you are
+your account there. The Assignment 2 snapshot can then be found [HERE](https://www.stanfordterminalcloud.com/snapshot/6c95ca2c9866a962964ede3ea5813d4c2410ba48d92cf8d11a93fbb13e08b76a). If you are
 registered in the class you can contact the TA (see Piazza for more information)
 to request Terminal credits for use on the assignment. Once you boot up the
 snapshot everything will be installed for you, and you will be ready to start on
 your assignment right away. We have written a small tutorial on Terminal
-[here](http://cs231n.github.io/terminal-tutorial/).
+[here](/terminal-tutorial).
 
 ### Working locally
 Get the code as a zip file
@@ -80,7 +80,7 @@ python setup.py build_ext --inplace
 **Start IPython:**
 After you have the CIFAR-10 data, you should start the IPython notebook server
 from the `assignment2` directory. If you are unfamiliar with IPython, you should 
-read our [IPython tutorial](http://cs231n.github.io/ipython-tutorial/).
+read our [IPython tutorial](/ipython-tutorial).
 
 **NOTE:** If you are working in a virtual environment on OSX, you may encounter
 errors with matplotlib due to the
@@ -93,7 +93,7 @@ assumes that your virtual environment is named `.env`.
 ### Submitting your work:
 Whether you work on the assignment locally or using Terminal, once you are done
 working run the `collectSubmission.sh` script; this will produce a file called
-`assignment2.zip`. Upload this file to your dropbox on
+`assignment2.zip`. Upload this file under the Assignments tab on
 [the coursework](https://coursework.stanford.edu/portal/site/W15-CS-231N-01/)
 page for the course.
 
