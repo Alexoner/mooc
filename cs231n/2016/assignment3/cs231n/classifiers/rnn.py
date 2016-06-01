@@ -144,11 +144,14 @@ class CaptioningRNN(object):
     # N x H
     h0, cache['affine'] = affine_forward(features, W_proj, b_proj)
     # N x T x W
-    caption_vectors, cache['word_embedding'] = word_embedding_forward(captions_in, W_embed)
+    word_embed, cache['word_embedding'] = word_embedding_forward(captions_in, W_embed)
     if self.cell_type == 'rnn':
       # N x T x H
-      h, cache['rnn'] = rnn_forward(caption_vectors, h0, Wx, Wh, b)
-      pass
+      h, cache['rnn'] = rnn_forward(word_embed, h0, Wx, Wh, b)
+    elif self.cell_type == 'lstm':
+      h, cache['lstm'] = lstm_forward(word_embed, h0, Wx, Wh, b)
+    else:
+      raise ValueError('cell type not implemented' % (self.cell_type))
     # N x T x V
     scores, cache['temporal_affine'] = temporal_affine_forward(h, W_vocab, b_vocab)
 
@@ -157,10 +160,14 @@ class CaptioningRNN(object):
     # NOTE: BACKWARD pass
     dh, grads['W_vocab'], grads['b_vocab']= temporal_affine_backward(
         dscores, cache['temporal_affine'])
-    (dcaption_vectors, dh0,
-     grads['Wx'], grads['Wh'], grads['b']) = rnn_backward(dh, cache['rnn'])
+    if self.cell_type == 'rnn':
+      (dword_embed, dh0,
+       grads['Wx'], grads['Wh'], grads['b']) = rnn_backward(dh, cache['rnn'])
+    elif self.cell_type == 'lstm':
+      (dword_embed, dh0,
+       grads['Wx'], grads['Wh'], grads['b']) = lstm_backward(dh, cache['lstm'])
     grads['W_embed'] = word_embedding_backward(
-        dcaption_vectors, cache['word_embedding'])
+        dword_embed, cache['word_embedding'])
     _, grads['W_proj'], grads['b_proj'] = affine_backward(
         dh0, cache['affine'])
     pass
@@ -229,11 +236,16 @@ class CaptioningRNN(object):
     prev_words = self._start * np.ones((N, 1)).astype('int')
     h, _ = affine_forward(features, W_proj, b_proj)
     for t in range(max_length):
-      word_vectors, _ = word_embedding_forward(prev_words, W_embed)
-      # print 'word_vectors', word_vectors.shape
+      word_embed, _ = word_embedding_forward(prev_words, W_embed)
+      # print 'word_embed', word_embed.shape
       # print 'previous h:', h.shape
       h = h.reshape((N, -1))
-      h, _ = rnn_forward(word_vectors, h, Wx, Wh, b)
+      if self.cell_type == 'rnn':
+        h, _ = rnn_forward(word_embed, h, Wx, Wh, b)
+      elif self.cell_type == 'lstm':
+        h, _ = lstm_forward(word_embed, h, Wx, Wh, b)
+      else:
+          raise ValueError('cell type not implemented' % (self.cell_type))
       scores, _ = temporal_affine_forward(
           h, W_vocab, b_vocab)
       # print 'scores shape', scores.shape
