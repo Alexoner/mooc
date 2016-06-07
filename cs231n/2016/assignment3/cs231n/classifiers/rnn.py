@@ -232,26 +232,38 @@ class CaptioningRNN(object):
     # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
     # a loop.                                                                 #
     ###########################################################################
-    N, D = features.shape
+
+    # N x 1
     prev_words = self._start * np.ones((N, 1)).astype('int')
-    h, _ = affine_forward(features, W_proj, b_proj)
+    # N x H
+    h0, _ = affine_forward(features, W_proj, b_proj)
+    prev_h = h0
+    if self.cell_type == 'lstm':
+      prev_c = np.zeros_like(h0)
+
     for t in range(max_length):
       word_embed, _ = word_embedding_forward(prev_words, W_embed)
-      # print 'word_embed', word_embed.shape
-      # print 'previous h:', h.shape
-      h = h.reshape((N, -1))
+      word_embed = word_embed.reshape((N, -1))
+
+      prev_h = prev_h.reshape((N, -1))
       if self.cell_type == 'rnn':
-        h, _ = rnn_forward(word_embed, h, Wx, Wh, b)
+        h, _ = rnn_step_forward(word_embed, prev_h, Wx, Wh, b)
       elif self.cell_type == 'lstm':
-        h, _ = lstm_forward(word_embed, h, Wx, Wh, b)
+        h, c, _ = lstm_step_forward(word_embed, prev_h, prev_c, Wx, Wh, b)
       else:
           raise ValueError('cell type not implemented' % (self.cell_type))
+      # h = h.reshape((N, 1, -1))
       scores, _ = temporal_affine_forward(
-          h, W_vocab, b_vocab)
+          h[:, np.newaxis, :], W_vocab, b_vocab)
+
       # print 'scores shape', scores.shape
       prev_words = np.argmax(scores, axis=-1)
       # print prev_words.shape, captions[:, t].shape
       captions[:, t] = prev_words.reshape((-1))
+
+      if self.cell_type == 'lstm':
+        prev_c = c
+      prev_h = h
       pass
     pass
     ############################################################################
