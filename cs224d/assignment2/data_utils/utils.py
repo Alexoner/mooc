@@ -8,7 +8,7 @@ import pandas as pd
 
 
 def invert_dict(d):
-    return {v:k for k,v in d.iteritems()}
+    return {v:k for k,v in d.items()}
 
 def flatten1(lst):
     return list(itertools.chain.from_iterable(lst))
@@ -103,7 +103,7 @@ def docs_to_windows(docs, word_to_num, tag_to_num, wsize=3):
     pad = (wsize - 1)/2
     docs = flatten1([pad_sequence(seq, left=pad, right=pad) for seq in docs])
 
-    words, tags = zip(*docs)
+    words, tags = list(zip(*docs))
     words = [canonicalize_word(w, word_to_num) for w in words]
     tags = [t.split("|")[0] for t in tags]
     return seq_to_windows(words, tags, word_to_num, tag_to_num, pad, pad)
@@ -157,7 +157,7 @@ def offset_seq(seq):
     return seq[:-1], seq[1:]
 
 def seqs_to_lmXY(seqs):
-    X, Y = zip(*[offset_seq(s) for s in seqs])
+    X, Y = list(zip(*[offset_seq(s) for s in seqs]))
     return array(X, dtype=object), array(Y, dtype=object)
 
 ##
@@ -172,7 +172,7 @@ def docs_to_tag_sequence(docs, word_to_num, tag_to_num):
     Y = []
     for seq in docs:
         if len(seq) < 1: continue
-        words, tags = zip(*seq)
+        words, tags = list(zip(*seq))
 
         words = [canonicalize_word(w, word_to_num) for w in words]
         x = seq_to_indices(words, word_to_num)

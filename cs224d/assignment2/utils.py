@@ -22,7 +22,7 @@ class Vocab(object):
     for word in words:
       self.add_word(word)
     self.total_words = float(sum(self.word_freq.values()))
-    print '{} total words with {} uniques'.format(self.total_words, len(self.word_freq))
+    print('{} total words with {} uniques'.format(self.total_words, len(self.word_freq)))
 
   def encode(self, word):
     if word not in self.word_to_index:
@@ -88,7 +88,7 @@ def data_iterator(orig_X, orig_y=None, batch_size=32, label_size=2, shuffle=Fals
   ###
   total_processed_examples = 0
   total_steps = int(np.ceil(len(data_X) / float(batch_size)))
-  for step in xrange(total_steps):
+  for step in range(total_steps):
     # Create the batch by selecting up to batch_size elements
     batch_start = step * batch_size
     x = data_X[batch_start:batch_start + batch_size]

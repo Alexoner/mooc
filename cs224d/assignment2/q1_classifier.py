@@ -196,8 +196,8 @@ class SoftmaxModel(Model):
       average_loss = self.run_epoch(sess, input_data, input_labels)
       duration = time.time() - start_time
       # Print status to stdout.
-      print('Epoch %d: loss = %.2f (%.3f sec)'
-             % (epoch, average_loss, duration))
+      print(('Epoch %d: loss = %.2f (%.3f sec)'
+             % (epoch, average_loss, duration)))
       losses.append(average_loss)
     return losses
 
@@ -233,7 +233,7 @@ def test_SoftmaxModel():
   # If ops are implemented correctly, the average loss should fall close to zero
   # rapidly.
   assert losses[-1] < .5
-  print "Basic (non-exhaustive) classifier tests pass\n"
+  print("Basic (non-exhaustive) classifier tests pass\n")
 
 if __name__ == "__main__":
     test_SoftmaxModel()
