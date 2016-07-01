@@ -2,6 +2,7 @@ from collections import defaultdict
 
 
 class Vocab(object):
+
     def __init__(self):
         self.word_to_index = {}
         self.index_to_word = {}
@@ -21,7 +22,8 @@ class Vocab(object):
         for word in words:
             self.add_word(word)
         self.total_words = float(sum(self.word_freq.values()))
-        print '{} total words with {} uniques'.format(self.total_words, len(self.word_freq))
+        print('{} total words with {} uniques'.format(
+            self.total_words, len(self.word_freq)))
 
     def encode(self, word):
         if word not in self.word_to_index:

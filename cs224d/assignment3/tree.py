@@ -9,6 +9,7 @@ UNK = 'UNK'
 
 
 class Node:  # a node in the tree
+
     def __init__(self, label, word=None):
         self.label = label
         self.word = word
@@ -79,7 +80,7 @@ class Tree:
 def leftTraverse(node, nodeFn=None, args=None):
     """
     Recursive function traverses tree
-    from left to right. 
+    from left to right.
     Calls nodeFn at each node
     """
     if node is None:
@@ -113,7 +114,7 @@ def loadTrees(dataSet='train'):
     Loads training trees. Maps leaf node words to word ids.
     """
     file = 'trees/%s.txt' % dataSet
-    print "Loading %s trees.." % dataSet
+    print("Loading %s trees.." % dataSet)
     with open(file, 'r') as fid:
         trees = [Tree(l) for l in fid.readlines()]
 
@@ -123,39 +124,40 @@ def simplified_data(num_train, num_dev, num_test):
     rndstate = random.getstate()
     random.seed(0)
     trees = loadTrees('train') + loadTrees('dev') + loadTrees('test')
-    
-    #filter extreme trees
-    pos_trees = [t for t in trees if t.root.label==4]
-    neg_trees = [t for t in trees if t.root.label==0]
 
-    #binarize labels
+    # filter extreme trees
+    pos_trees = [t for t in trees if t.root.label == 4]
+    neg_trees = [t for t in trees if t.root.label == 0]
+
+    # binarize labels
     binarize_labels(pos_trees)
     binarize_labels(neg_trees)
-    
-    #split into train, dev, test
-    print len(pos_trees), len(neg_trees)
+
+    # split into train, dev, test
+    print(len(pos_trees), len(neg_trees))
     pos_trees = sorted(pos_trees, key=lambda t: len(t.get_words()))
     neg_trees = sorted(neg_trees, key=lambda t: len(t.get_words()))
-    num_train/=2
-    num_dev/=2
-    num_test/=2
+    num_train /= 2
+    num_dev /= 2
+    num_test /= 2
     train = pos_trees[:num_train] + neg_trees[:num_train]
-    dev = pos_trees[num_train : num_train+num_dev] + neg_trees[num_train : num_train+num_dev]
-    test = pos_trees[num_train+num_dev : num_train+num_dev+num_test] + neg_trees[num_train+num_dev : num_train+num_dev+num_test]
+    dev = pos_trees[num_train: num_train + num_dev] + \
+        neg_trees[num_train: num_train + num_dev]
+    test = pos_trees[num_train + num_dev: num_train + num_dev + num_test] + \
+        neg_trees[num_train + num_dev: num_train + num_dev + num_test]
     random.shuffle(train)
     random.shuffle(dev)
     random.shuffle(test)
     random.setstate(rndstate)
-
 
     return train, dev, test
 
 
 def binarize_labels(trees):
     def binarize_node(node, _):
-        if node.label<2:
+        if node.label < 2:
             node.label = 0
-        elif node.label>2:
+        elif node.label > 2:
             node.label = 1
     for tree in trees:
         leftTraverse(tree.root, binarize_node, None)
