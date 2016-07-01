@@ -57,6 +57,20 @@ def load_wv_raw(fname):
                          quoting=3)
 
 def load_dataset(fname):
+    """
+    Returns:
+     docs: document lists of list of word-tag lists[[[]]]
+        like:
+            [['EU', 'ORG'],
+             ['rejects', 'O'],
+             ['German', 'MISC'],
+             ['call', 'O'],
+             ['to', 'O'],
+             ['boycott', 'O'],
+             ['British', 'MISC'],
+             ['lamb', 'O'],
+             ['.', 'O']]
+    """
     docs = []
     with open(fname) as fd:
         cur = []
@@ -81,7 +95,7 @@ def extract_word_set(docs):
     return words
 
 def pad_sequence(seq, left=1, right=1):
-    return left*[("<s>", "")] + seq + right*[("</s>", "")]
+    return int(left)*[("<s>", "")] + seq + int(right)*[("</s>", "")]
 
 ##
 # For window models
@@ -94,7 +108,7 @@ def seq_to_windows(words, tags, word_to_num, tag_to_num, left=1, right=1):
             continue # skip sentence delimiters
         tagn = tag_to_num[tags[i]]
         idxs = [word_to_num[words[ii]]
-                for ii in range(i - left, i + right + 1)]
+                for ii in range(i - int(left), i + int(right) + 1)]
         X.append(idxs)
         y.append(tagn)
     return array(X), array(y)

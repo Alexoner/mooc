@@ -63,3 +63,6 @@ target/
 datasets/
 .ipynb_checkpoints/
 *.npy
+
+# backup files
+*.bak

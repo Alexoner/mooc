@@ -11,6 +11,8 @@ import data_utils.ner as ner
 from utils import data_iterator
 from model import LanguageModel
 
+# dropout: 0.500000, lr: 0.0008725245572030131, l2: 1.722356192481772e-05
+
 class Config(object):
   """Holds model hyperparams and data information.
 
@@ -22,12 +24,19 @@ class Config(object):
   batch_size = 64
   label_size = 5
   hidden_size = 100
-  max_epochs = 24 
+  max_epochs = 2
   early_stopping = 2
-  dropout = 0.9
-  lr = 0.001
-  l2 = 0.001
-  window_size = 3
+  dropout = 0.900000  # well, this is an important hyperparameter. The over-fitting gets heavier as the training epoch moves forward
+  lr = 0.003615
+  l2 = 0.000035
+  window_size = 5
+
+  def __str__(self):
+    return '''embed_size: %d, batch_size: %d, label_size: %d, hidden_size: %d,
+max_epochs: %d, early_stopping: %d, dropout: %f, lr: %f, l2: %f,
+window_size: %d''' % (self.embed_size, self.batch_size, self.label_size,
+                              self.hidden_size, self.max_epochs, self.early_stopping,
+                              self.dropout, self.lr, self.l2, self.window_size)
 
 class NERModel(LanguageModel):
   """Implements a NER (Named Entity Recognition) model.
@@ -84,15 +93,19 @@ class NERModel(LanguageModel):
                          type tf.float32
 
     Add these placeholders to self as the instance variables
-  
+
       self.input_placeholder
       self.labels_placeholder
       self.dropout_placeholder
 
     (Don't change the variable names)
     """
-    ### YOUR CODE HERE
-    raise NotImplementedError
+    ### TODO: YOUR CODE HERE
+    self.input_placeholder = tf.placeholder(
+      tf.int32, shape=(None, self.config.window_size), name='Input')
+    self.labels_placeholder = tf.placeholder(
+      tf.float32, shape=(None, self.config.label_size), name='Labels')
+    self.dropout_placeholder = tf.placeholder(tf.float32, name='Dropout')
     ### END YOUR CODE
 
   def create_feed_dict(self, input_batch, dropout, label_batch=None):
@@ -109,15 +122,21 @@ class NERModel(LanguageModel):
     Hint: The keys for the feed_dict should be a subset of the placeholder
           tensors created in add_placeholders.
     Hint: When label_batch is None, don't add a labels entry to the feed_dict.
-    
+
     Args:
       input_batch: A batch of input data.
       label_batch: A batch of label data.
     Returns:
       feed_dict: The feed dictionary mapping from placeholders to values.
     """
-    ### YOUR CODE HERE
-    raise NotImplementedError
+    ### TODO: YOUR CODE HERE
+    feed_dict = {
+        self.input_placeholder: input_batch,
+    }
+    if label_batch is not None:
+        feed_dict[self.labels_placeholder] = label_batch
+    if dropout is not None:
+        feed_dict[self.dropout_placeholder] = dropout
     ### END YOUR CODE
     return feed_dict
 
@@ -147,8 +166,11 @@ class NERModel(LanguageModel):
     """
     # The embedding lookup is currently only implemented for the CPU
     with tf.device('/cpu:0'):
-      ### YOUR CODE HERE
-      raise NotImplementedError
+      ### TODO: YOUR CODE HERE
+      embeddings = tf.Variable(
+          tf.random_uniform((len(self.wv), self.config.embed_size), -1.0, 1.0), name='Embeddings')
+      window = tf.nn.embedding_lookup(embeddings, self.input_placeholder)
+      window = tf.reshape(window, (-1, self.config.window_size * self.config.embed_size))
       ### END YOUR CODE
       return window
 
@@ -179,10 +201,27 @@ class NERModel(LanguageModel):
     Returns:
       output: tf.Tensor of shape (batch_size, label_size)
     """
-    ### YOUR CODE HERE
-    raise NotImplementedError
+    ### TODO: YOUR CODE HERE
+    xavier_initializer = xavier_weight_init()
+    with tf.variable_scope('Layer', initializer=xavier_initializer) as scope:
+        W = tf.get_variable('W',
+                            shape=(self.config.window_size * self.config.embed_size,
+                                   self.config.hidden_size)
+                            )
+        b1 = tf.Variable(tf.zeros((self.config.hidden_size,)))
+        if self.config.l2:
+          tf.add_to_collection('total_loss', self.config.l2 * tf.nn.l2_loss(W))
+    a1 = tf.nn.tanh(tf.matmul(window, W) + b1)
+    with tf.variable_scope('Softmax', initializer=xavier_initializer) as scope:
+        U = tf.get_variable('U',
+                            shape=(self.config.hidden_size, self.config.label_size),
+                            )
+        b2 = tf.zeros((self.config.label_size))
+        if self.config.l2:
+          tf.add_to_collection('total_loss', 0.5 * self.config.l2 * tf.reduce_sum(U ** 2))
+    output = tf.nn.dropout(tf.matmul(a1, U) + b2, self.dropout_placeholder)
     ### END YOUR CODE
-    return output 
+    return output
 
   def add_loss_op(self, y):
     """Adds cross_entropy_loss ops to the computational graph.
@@ -194,8 +233,10 @@ class NERModel(LanguageModel):
     Returns:
       loss: A 0-d tensor (scalar)
     """
-    ### YOUR CODE HERE
-    raise NotImplementedError
+    ### TODO: YOUR CODE HERE
+    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+        y, self.labels_placeholder))
+    loss += tf.reduce_sum(tf.get_collection('total_loss'))
     ### END YOUR CODE
     return loss
 
@@ -204,7 +245,7 @@ class NERModel(LanguageModel):
 
     Creates an optimizer and applies the gradients to all trainable variables.
     The Op returned by this function is what must be passed to the
-    `sess.run()` call to cause the model to train. See 
+    `sess.run()` call to cause the model to train. See
 
     https://www.tensorflow.org/versions/r0.7/api_docs/python/train.html#Optimizer
 
@@ -218,8 +259,9 @@ class NERModel(LanguageModel):
     Returns:
       train_op: The Op for training.
     """
-    ### YOUR CODE HERE
-    raise NotImplementedError
+    ### TODO: YOUR CODE HERE
+    opt = tf.train.AdamOptimizer(learning_rate=self.config.lr)
+    train_op = opt.minimize(loss)
     ### END YOUR CODE
     return train_op
 
@@ -261,7 +303,7 @@ class NERModel(LanguageModel):
       ##
       if verbose and step % verbose == 0:
         sys.stdout.write('\r{} / {} : loss = {}'.format(
-            step, total_steps, np.mean(total_loss)))
+          step, total_steps, np.mean(total_loss)))
         sys.stdout.flush()
     if verbose:
         sys.stdout.write('\r')
@@ -320,7 +362,7 @@ def save_predictions(predictions, filename):
   """Saves predictions to provided file."""
   with open(filename, "wb") as f:
     for prediction in predictions:
-      f.write(str(prediction) + "\n")
+      f.write((str(prediction) + "\n").encode())
 
 def test_NER():
   """Test NER model implementation.
@@ -356,7 +398,7 @@ def test_NER():
           best_val_epoch = epoch
           if not os.path.exists("./weights"):
             os.makedirs("./weights")
-        
+
           saver.save(session, './weights/ner.weights')
         if epoch - best_val_epoch > config.early_stopping:
           break
@@ -364,7 +406,7 @@ def test_NER():
         confusion = calculate_confusion(config, predictions, model.y_dev)
         print_confusion(confusion, model.num_to_tag)
         print('Total time: {}'.format(time.time() - start))
-      
+
       saver.restore(session, './weights/ner.weights')
       print('Test')
       print('=-=-=')
@@ -372,5 +414,82 @@ def test_NER():
       _, predictions = model.predict(session, model.X_test, model.y_test)
       save_predictions(predictions, "q2_test.predicted")
 
+def run_model(config):
+  with tf.Graph().as_default():
+    model = NERModel(config)
+
+    init = tf.initialize_all_variables()
+    saver = tf.train.Saver()
+
+    best_val_loss = float('inf')
+    best_val_epoch = 0
+
+    with tf.Session() as session:
+        session.run(init)
+        for epoch in range(config.max_epochs):
+            print('Epoch {}'.format(epoch))
+            start = time.time()
+            ###
+            train_loss, train_acc = model.run_epoch(session, model.X_train,
+                                                    model.y_train)
+            val_loss, predictions = model.predict(session, model.X_dev, model.y_dev)
+            print('Training loss: {}'.format(train_loss))
+            print('Training acc: {}'.format(train_acc))
+            print('Validation loss: {}'.format(val_loss))
+            if val_loss < best_val_loss:
+              best_val_loss = val_loss
+              best_val_epoch = epoch
+              if not os.path.exists("./weights"):
+                os.makedirs("./weights")
+
+              saver.save(session, './weights/ner.weights')
+            if epoch - best_val_epoch > config.early_stopping:
+              break
+            ###
+            confusion = calculate_confusion(config, predictions, model.y_dev)
+            print_confusion(confusion, model.num_to_tag)
+            print('Total time: {}'.format(time.time() - start))
+
+    return train_loss, train_acc, best_val_loss
+
+def cross_validate():
+  """ Cross validate to get best performance
+  """
+  embed_sizes = [50, 100][:1]
+  batch_sizes = [64, 128][:1]
+  hidden_sizes = [50, 100, 150][1:2]
+  window_sizes = [3, 4, 5][2:]
+  dropouts = [0.5, 0.7, 0.9]
+  lrs = sorted(10 ** np.random.uniform(-2.5, -2, 2))
+  l2s = sorted(10 ** np.random.uniform(-4.4, -3, 2))
+
+  config = Config()
+  config.max_epochs = 2
+  results = []
+  from itertools import product
+  for (embed_size, batch_size, hidden_size, window_size, dropout, lr, l2
+  ) in product(embed_sizes, batch_sizes, hidden_sizes, window_sizes, dropouts, lrs, l2s):
+    config.embed_size = embed_size
+    config.batch_size = batch_size
+    config.hidden_size = hidden_size
+    config.window_size = window_size
+    config.dropout = dropout
+    config.lr = lr
+    config.l2 = l2
+
+    print('config: ', config)
+    results.append((embed_size, batch_size, hidden_size, window_size, lr, l2) + \
+                   run_model(config))
+    print('===============================================================\n')
+
+  results = sorted(results, key=lambda x: x[-1])
+  print(results)
+  best_config = results[-1]
+
 if __name__ == "__main__":
-  test_NER()
+  if len(sys.argv) > 1:
+    sys.stdout.write('running cross validation\n')
+    sys.stdout.flush()
+    cross_validate()
+  else:
+    test_NER()
