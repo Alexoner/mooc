@@ -21,9 +21,9 @@ class Config(object):
     early_stopping = 2
     anneal_threshold = 0.99
     anneal_by = 1.5
-    max_epochs = 30
+    max_epochs = 3
     lr = 0.01
-    l2 = 0.02
+    l2 = 0.02 # too large may cause the model 'die' during training
     model_name = 'rnn_embed=%d_l2=%f_lr=%f.weights' % (embed_size, l2, lr)
 
 
@@ -72,10 +72,19 @@ class RNN_Model():
         '''
         with tf.variable_scope('Composition'):
             # TODO: YOUR CODE HERE
+            embedding = tf.get_variable(
+                'embedding', shape=[len(self.vocab), self.config.embed_size])
+            W1 = tf.get_variable(
+                'W1',
+                shape=[2 * self.config.embed_size, self.config.embed_size])
+            b1 = tf.get_variable('b1', shape=[1, self.config.embed_size])
             pass
             # END YOUR CODE
         with tf.variable_scope('Projection'):
             # TODO: YOUR CODE HERE
+            U = tf.get_variable(
+                'U', shape=[self.config.embed_size, self.config.label_size])
+            bs = tf.get_variable('bs', shape=[1, self.config.label_size])
             pass
             # END YOUR CODE
 
@@ -96,6 +105,9 @@ class RNN_Model():
         """
         with tf.variable_scope('Composition', reuse=True):
             # TODO: YOUR CODE HERE
+            embedding = tf.get_variable('embedding')
+            W1 = tf.get_variable('W1')
+            b1 = tf.get_variable('b1')
             pass
             # END YOUR CODE
 
@@ -103,12 +115,21 @@ class RNN_Model():
         curr_node_tensor = None
         if node.isLeaf:
             # TODO: YOUR CODE HERE
+            curr_node_tensor = tf.reshape(
+                tf.gather(embedding, self.vocab.encode(node.word)),
+                [1, -1])
+            node.tensor = curr_node_tensor
             pass
             # END YOUR CODE
         else:
             node_tensors.update(self.add_model(node.left))
             node_tensors.update(self.add_model(node.right))
             # TODO: YOUR CODE HERE
+            # TODO: add dropout to prevent over-fitting
+            # NOTE: don't forget RELU activation here!!!
+            child_tensor = tf.concat(1, [node_tensors[node.left], node_tensors[node.right]])
+            curr_node_tensor = tf.nn.relu(tf.matmul(child_tensor, W1) + b1)
+            node.tensor = curr_node_tensor
             pass
             # END YOUR CODE
         node_tensors[node] = curr_node_tensor
@@ -121,10 +142,15 @@ class RNN_Model():
         Args:
             node_tensors: tensor(?, embed_size)
         Returns:
-            output: tensor(?, label_size)
+            logits: tensor(?, label_size)
         """
         logits = None
         # TODO: YOUR CODE HERE
+        with tf.variable_scope('Projection', reuse=True):
+            U = tf.get_variable('U')
+            bs = tf.get_variable('bs')
+        # NOTE: logit is the INVERSE function of softmax(logistic)
+        logits = tf.matmul(node_tensors, U) + bs
         pass
         # END YOUR CODE
         return logits
@@ -142,6 +168,18 @@ class RNN_Model():
         """
         loss = None
         # TODO: YOUR CODE HERE
+        loss_reg = 0
+        with tf.variable_scope('Composition', reuse=True):
+            W1 = tf.get_variable('W1')
+            loss_reg += tf.nn.l2_loss(W1)
+        with tf.variable_scope('Projection', reuse=True):
+            U = tf.get_variable('U')
+            loss_reg += tf.nn.l2_loss(U)
+
+        cross_entropy = tf.reduce_sum(
+            tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels))
+        # NOTE: I was so stupid to forget REGULARIZATION STRENGTH here
+        loss = cross_entropy + self.config.l2 * loss_reg
         pass
         # END YOUR CODE
         return loss
@@ -167,6 +205,8 @@ class RNN_Model():
         """
         train_op = None
         # TODO: YOUR CODE HERE
+        optimizer = tf.train.GradientDescentOptimizer(self.config.lr)
+        train_op = optimizer.minimize(loss)
         pass
         # END YOUR CODE
         return train_op
@@ -181,6 +221,7 @@ class RNN_Model():
         """
         predictions = None
         # TODO: YOUR CODE HERE
+        predictions = tf.arg_max(y, 1)
         pass
         # END YOUR CODE
         return predictions

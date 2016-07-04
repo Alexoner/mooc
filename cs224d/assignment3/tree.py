@@ -140,6 +140,9 @@ def simplified_data(num_train, num_dev, num_test):
     num_train /= 2
     num_dev /= 2
     num_test /= 2
+    num_train = int(num_train)
+    num_dev = int(num_dev)
+    num_test = int(num_test)
     train = pos_trees[:num_train] + neg_trees[:num_train]
     dev = pos_trees[num_train: num_train + num_dev] + \
         neg_trees[num_train: num_train + num_dev]

@@ -280,7 +280,7 @@ class RNNLM_Model(LanguageModel):
         print('initial state:', self.initial_state.name, self.initial_state.get_shape(), 'H:', H.name)
         state = self.initial_state
         # TODO: dropout input
-        tf.nn.dropout(inputs, self.dropout_placeholder)
+        inputs = tf.nn.dropout(inputs, self.dropout_placeholder)
         for t in range(self.config.num_steps):
             # scope.reuse_variables()
             state = tf.sigmoid(tf.matmul(state, H) + tf.matmul(inputs[t, :, :], I) + b_1)
