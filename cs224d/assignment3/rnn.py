@@ -10,8 +10,20 @@ import tensorflow as tf
 import tree as tr
 from utils import Vocab
 
+"""
+Recursive Neural Network for sentiment analysis.
+TODO: prevent over-fitting
+1. increase network DEPTH, change WEIGHT INITIALIZATION method
+2. add DROPOUT at the appropriate layer(before softmax). Adding dropout at the composition layer
+   gives bad result. Consider BATCH NORMALIZATION.
+3. tune LEARNING RATE and REGUALIZATION STRENGTH
+4. DATA AUGMENTATION...
+"""
 
+
+NUM_THREADS = 8
 RESET_AFTER = 50
+
 class Config(object):
     """Holds model hyperparams and data information.
        Model objects are passed a Config() object at instantiation.
@@ -21,9 +33,11 @@ class Config(object):
     early_stopping = 2
     anneal_threshold = 0.99
     anneal_by = 1.5
-    max_epochs = 3
+    max_epochs = 30
     lr = 0.01
-    l2 = 0.02 # too large may cause the model 'die' during training
+    l2 = 1e-2  # too large may cause the model 'die' during training
+    dropout = 0.5
+    hidden_size = 35  # hidden size for last second layer for Projection
     model_name = 'rnn_embed=%d_l2=%f_lr=%f.weights' % (embed_size, l2, lr)
 
 
@@ -73,17 +87,31 @@ class RNN_Model():
         with tf.variable_scope('Composition'):
             # TODO: YOUR CODE HERE
             embedding = tf.get_variable(
-                'embedding', shape=[len(self.vocab), self.config.embed_size])
+                'embedding', shape=[len(self.vocab), self.config.embed_size]
+            )
             W1 = tf.get_variable(
                 'W1',
-                shape=[2 * self.config.embed_size, self.config.embed_size])
+                shape=[2 * self.config.embed_size, self.config.embed_size],
+                initializer=tf.contrib.layers.xavier_initializer()
+            )
             b1 = tf.get_variable('b1', shape=[1, self.config.embed_size])
             pass
             # END YOUR CODE
         with tf.variable_scope('Projection'):
             # TODO: YOUR CODE HERE
+            # W2 = tf.get_variable(
+                # 'W2',
+                # shape=[self.config.embed_size, self.config.hidden_size]
+            # )
+            # b2 = tf.get_variable(
+                # 'b2',
+                # # shape=[1, self.config.embed_size],
+                # initializer=tf.zeros_initializer([1, self.config.embed_size])
+            # )
             U = tf.get_variable(
-                'U', shape=[self.config.embed_size, self.config.label_size])
+                'U', shape=[self.config.embed_size, self.config.label_size],
+                initializer=tf.contrib.layers.xavier_initializer()
+            )
             bs = tf.get_variable('bs', shape=[1, self.config.label_size])
             pass
             # END YOUR CODE
@@ -126,9 +154,11 @@ class RNN_Model():
             node_tensors.update(self.add_model(node.right))
             # TODO: YOUR CODE HERE
             # TODO: add dropout to prevent over-fitting
-            # NOTE: don't forget RELU activation here!!!
-            child_tensor = tf.concat(1, [node_tensors[node.left], node_tensors[node.right]])
-            curr_node_tensor = tf.nn.relu(tf.matmul(child_tensor, W1) + b1)
+            # NOTE: don't forget nonlinear (RELU, tanh) activation here!!!
+            child_tensor = tf.concat(
+                1, [node_tensors[node.left], node_tensors[node.right]])
+            curr_node_tensor = tf.nn.relu(
+                tf.matmul(child_tensor, W1) + b1)
             node.tensor = curr_node_tensor
             pass
             # END YOUR CODE
@@ -147,10 +177,19 @@ class RNN_Model():
         logits = None
         # TODO: YOUR CODE HERE
         with tf.variable_scope('Projection', reuse=True):
+            # W2 = tf.get_variable('W2')
+            # b2 = tf.get_variable('b2')
             U = tf.get_variable('U')
             bs = tf.get_variable('bs')
         # NOTE: logit is the INVERSE function of softmax(logistic)
-        logits = tf.matmul(node_tensors, U) + bs
+        # add dropout before softmax
+        # TODO: add anther hidden layer final projection
+        # logits = tf.nn.dropout(
+            # tf.matmul(node_tensors, U) + bs, self.config.dropout
+        # )
+        # or add dropout before logits
+        logits = tf.matmul(
+            tf.nn.dropout(node_tensors, self.config.dropout), U) + bs
         pass
         # END YOUR CODE
         return logits
@@ -235,7 +274,8 @@ class RNN_Model():
         results = []
         losses = []
         for i in range(int(math.ceil(len(trees) / float(RESET_AFTER)))):
-            with tf.Graph().as_default(), tf.Session() as sess:
+            with tf.Graph().as_default(), tf.Session(
+                    config=tf.ConfigProto(intra_op_parallelism_threads=NUM_THREADS)) as sess:
                 self.add_model_vars()
                 saver = tf.train.Saver()
                 saver.restore(sess, weights_path)
@@ -254,7 +294,8 @@ class RNN_Model():
         step = 0
         loss_history = []
         while step < len(self.train_data):
-            with tf.Graph().as_default(), tf.Session() as sess:
+            with tf.Graph().as_default(), tf.Session(
+                    config=tf.ConfigProto(intra_op_parallelism_threads=NUM_THREADS)) as sess:
                 self.add_model_vars()
                 if new_model:
                     init = tf.initialize_all_variables()
@@ -296,7 +337,7 @@ class RNN_Model():
 
         print()
         print('Training acc (only root node): {}'.format(train_acc))
-        print('Valiation acc (only root node): {}'.format(val_acc))
+        print('Validation acc (only root node): {}'.format(val_acc))
         print(self.make_conf(train_labels, train_preds))
         print(self.make_conf(val_labels, val_preds))
         return train_acc, val_acc, loss_history, np.mean(val_losses)
@@ -337,7 +378,7 @@ class RNN_Model():
                 best_val_loss = val_loss
                 best_val_epoch = epoch
 
-            # if model has not imprvoved for a while stop
+            # if model has not improved for a while stop
             if epoch - best_val_epoch > self.config.early_stopping:
                 stopped = epoch
                 # break
