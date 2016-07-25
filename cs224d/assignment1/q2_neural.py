@@ -26,19 +26,19 @@ def forward_backward_prop(data, labels, params, dimensions):
     b2 = np.reshape(params[ofs:ofs + Dy], (1, Dy))
 
     ### TODO: YOUR CODE HERE: forward propagation
-    a1 = sigmoid(np.dot(data, W1) + b1)
-    a2 = (np.dot(a1, W2) + b2)
+    a1 = sigmoid(data @ W1 + b1)
+    a2 = (a1 @ W2 + b2)
     y = softmax(a2)
     cost = -np.sum(np.log(y[labels == 1]))
     ### END YOUR CODE
 
     ### TODO: YOUR CODE HERE: backward propagation
     grada2 = y - labels
-    gradW2 = np.dot(a1.T, grada2)
+    gradW2 = a1.T @ grada2
     gradb2 = np.sum(grada2, axis=0)
 
-    grada1 = np.dot(grada2, W2.T)
-    gradW1 = np.dot(data.T, grada1 * sigmoid_grad(a1))
+    grada1 = grada2 @ W2.T
+    gradW1 = data.T @ (grada1 * sigmoid_grad(a1))
     gradb1 = np.sum(grada1 * sigmoid_grad(a1), axis=0)
 
     ### END YOUR CODE
@@ -54,13 +54,13 @@ def sanity_check():
     Set up fake data and parameters for the neural network, and test using
     gradcheck.
     """
-    print "Running sanity check..."
+    print("Running sanity check...")
 
     N = 20
     dimensions = [10, 5, 10]
     data = np.random.randn(N, dimensions[0])   # each row will be a datum
     labels = np.zeros((N, dimensions[2]))
-    for i in xrange(N):
+    for i in range(N):
         labels[i,random.randint(0,dimensions[2]-1)] = 1
 
     params = np.random.randn((dimensions[0] + 1) * dimensions[1] + (
@@ -76,7 +76,7 @@ def your_sanity_checks():
     This function will not be called by the autograder, nor will
     your additional tests be graded.
     """
-    print "Running your sanity checks..."
+    print("Running your sanity checks...")
     ### TODO: YOUR CODE HERE
     pass
     ### END YOUR CODE
