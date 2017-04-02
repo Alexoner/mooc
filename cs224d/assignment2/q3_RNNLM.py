@@ -109,8 +109,10 @@ class RNNLM_Model(LanguageModel):
           # [len(self.vocab), self.config.embed_size], -1.0, 1.0), name='embedding')
       embedding = tf.get_variable('Embedding', shape=[len(self.vocab), self.config.embed_size])
       inputs = tf.nn.embedding_lookup(embedding, self.input_placeholder)
-      inputs = tf.reshape(inputs, [self.config.batch_size, self.config.num_steps, self.config.embed_size])
-      inputs = tf.transpose(inputs, perm=[1, 0, 2])
+      # reshape the tensor in two alternative ways
+      # inputs = tf.reshape(inputs, [self.config.batch_size, self.config.num_steps, self.config.embed_size])
+      # inputs = tf.transpose(inputs, perm=[1, 0, 2])
+      inputs = [tf.squeeze(_input, 1) for _input in tf.split(1, self.config.num_steps, inputs)]
       ### END YOUR CODE
       return inputs
 

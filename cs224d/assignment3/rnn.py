@@ -34,9 +34,9 @@ class Config(object):
     anneal_threshold = 0.99
     anneal_by = 1.5
     max_epochs = 30
-    lr = 0.01
-    l2 = 1e-2  # too large may cause the model 'die' during training
-    dropout = 0.5
+    lr = 0.001
+    l2 = 1e-4  # too large may cause the model 'die' during training
+    dropout = 1
     hidden_size = 35  # hidden size for last second layer for Projection
     model_name = 'rnn_embed=%d_l2=%f_lr=%f.weights' % (embed_size, l2, lr)
 
@@ -99,15 +99,15 @@ class RNN_Model():
             # END YOUR CODE
         with tf.variable_scope('Projection'):
             # TODO: YOUR CODE HERE
-            # W2 = tf.get_variable(
-                # 'W2',
-                # shape=[self.config.embed_size, self.config.hidden_size]
-            # )
-            # b2 = tf.get_variable(
-                # 'b2',
-                # # shape=[1, self.config.embed_size],
-                # initializer=tf.zeros_initializer([1, self.config.embed_size])
-            # )
+            W2 = tf.get_variable(
+                'W2',
+                shape=[self.config.embed_size, self.config.hidden_size]
+            )
+            b2 = tf.get_variable(
+                'b2',
+                # shape=[1, self.config.embed_size],
+                initializer=tf.zeros_initializer([self.config.hidden_size])
+            )
             U = tf.get_variable(
                 'U', shape=[self.config.embed_size, self.config.label_size],
                 initializer=tf.contrib.layers.xavier_initializer()
@@ -177,19 +177,19 @@ class RNN_Model():
         logits = None
         # TODO: YOUR CODE HERE
         with tf.variable_scope('Projection', reuse=True):
-            # W2 = tf.get_variable('W2')
-            # b2 = tf.get_variable('b2')
+            W2 = tf.get_variable('W2')
+            b2 = tf.get_variable('b2')
             U = tf.get_variable('U')
             bs = tf.get_variable('bs')
         # NOTE: logit is the INVERSE function of softmax(logistic)
         # add dropout before softmax
         # TODO: add anther hidden layer final projection
+        hidden = tf.nn.dropout(tf.matmul(node_tensors, W2) + b2, self.config.dropout)
         # logits = tf.nn.dropout(
             # tf.matmul(node_tensors, U) + bs, self.config.dropout
         # )
         # or add dropout before logits
-        logits = tf.matmul(
-            tf.nn.dropout(node_tensors, self.config.dropout), U) + bs
+        logits = tf.matmul(hidden, U) + bs
         pass
         # END YOUR CODE
         return logits
@@ -213,7 +213,9 @@ class RNN_Model():
             loss_reg += tf.nn.l2_loss(W1)
         with tf.variable_scope('Projection', reuse=True):
             U = tf.get_variable('U')
+            W2 = tf.get_variable('W2')
             loss_reg += tf.nn.l2_loss(U)
+            loss_reg += tf.nn.l2_loss(W2)
 
         cross_entropy = tf.reduce_sum(
             tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels))
