@@ -341,7 +341,7 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   da[..., :H] = di * i * (1 - i)
   da[..., H:2*H] = df * f * (1 - f)
   da[..., 2*H:3*H] = do * o * (1 - o)
-  da[..., 3*H:] = dg * ( 1 - g ** 2)
+  da[..., 3*H:] = dg * (1 - g ** 2)
 
   dx = da.dot(Wx.T)
   dprev_h = da.dot(Wh.T)
@@ -540,9 +540,8 @@ def temporal_softmax_loss(x, y, mask, verbose=False):
   dx_flat /= N
   dx_flat *= mask_flat[:, None]
 
-  if verbose: print 'dx_flat: ', dx_flat.shape
+  if verbose: print ('dx_flat: ', dx_flat.shape)
 
   dx = dx_flat.reshape(N, T, V)
 
   return loss, dx
-

@@ -1,5 +1,15 @@
 import numpy as np
 
+"""
+A neural network is composed of multiple layers, which forms a COMPUTATION GRAPH.
+
+Each layer is a module, carrying out corresponding Matrix Calculation. The key
+to understand matrix operations is to keep in mind matrices' DIMENSION and
+partition the matrix into compatible BLOCK matrices .
+
+The forward propagation can be calculated module by module in the graph, so can
+back propagation, which utilizes the CHAIN RULE of calculus.
+"""
 
 def affine_forward(x, w, b):
   """
