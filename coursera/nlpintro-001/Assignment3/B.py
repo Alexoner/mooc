@@ -276,8 +276,7 @@ def classify(X_train, X_test, y_train):
     # the label encoder seems not necessary
     label_encoder = preprocessing.LabelEncoder()
     label_encoder.fit(y_train.values())
-    # FATAL & VITAL!!!
-    # DictVectorizer `REORDERS` key values in the X_train `DICTIONARY`
+    # XXX(FATAL & VITAL): DictVectorizer `REORDERS` key-value pairs in the X_train `DICTIONARY`
     _y_train = map(lambda key: y_train[key], X_train.keys())
 
     X_train_arr = sparse.csr_matrix(X_train.values())
